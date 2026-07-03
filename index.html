@@ -543,13 +543,19 @@ function freshSave(){
 let SAVE = freshSave();
 async function loadSave(){
   try{
-    const r = await window.storage.get("ordreisen-save");
-    if(r && r.value) SAVE = {...freshSave(), ...JSON.parse(r.value)};
+    let raw = localStorage.getItem("ordreisen-save");
+    if(!raw && window.storage && window.storage.get){
+      const r = await window.storage.get("ordreisen-save");
+      if(r && r.value) raw = r.value;
+    }
+    if(raw) SAVE = {...freshSave(), ...JSON.parse(raw)};
   }catch(e){}
   applyTheme(); applyLower(); renderStartStats();
 }
 async function persist(){
-  try{ await window.storage.set("ordreisen-save", JSON.stringify(SAVE)); }catch(e){}
+  const data = JSON.stringify(SAVE);
+  try{ localStorage.setItem("ordreisen-save", data); }catch(e){}
+  try{ if(window.storage && window.storage.set) await window.storage.set("ordreisen-save", data); }catch(e){}
 }
 
 // ---------- NIVÅ / XP ----------
