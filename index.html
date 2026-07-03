@@ -679,15 +679,11 @@ function pickVoice(){
 }
 if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 
-// Enkel uttale-ordbok for ord som Web Speech ofte sier feil på norsk.
-// Legg til flere her hvis iPad-stemmen lager rare uttaler.
-const ORD_UTTALE = {
-  // "iis" ble stavet som I-I-S av enkelte stemmer – bruk det ekte ordet "is".
-  IS:"is", SEL:"seel", UGLE:"ugle", BJØRN:"bjørn", DRAGE:"dra-ge", TIGER:"ti-ger", KRONE:"kro-ne",
-  PANDA:"pan-da", KOALA:"ko-a-la", SEBRA:"se-bra", LAMPE:"lam-pe", FROSK:"frosk", SLOTT:"slott",
-  KLOVN:"klovn", EPLE:"ep-le", LØVE:"lø-ve", MÅNE:"må-ne", BRØD:"brød", ROSE:"ro-se",
-  ROBOT:"ro-bot", PIZZA:"pitsa", ØY:"øy", KU:"ku", BI:"bi", TE:"te"
-};
+// Uttale-ordbok – TOM med vilje. Fantasi-stavinger som "seel", "dra-ge" og
+// "iis" fikk enkelte stemmer til å STAVE ordet bokstav for bokstav i stedet
+// for å si det. Ekte norske ord uttales best som de er. Legg kun til et ord
+// her hvis det er testet på ekte enhet og faktisk hjelper.
+const ORD_UTTALE = {};
 function spokenWord(W){
   const key=String(W||"").toUpperCase();
   return ORD_UTTALE[key] || key.toLowerCase();
