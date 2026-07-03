@@ -742,10 +742,10 @@ function speakWord(txt){
   const w = (typeof txt==="string") ? txt : (currentWord ? currentWord.w : null);
   if(w) speakWholeWord(w);
 }
-function speakSound(L){
+function speakSound(L, tone=0){
   // Bokstavlyd (lydmetoden). Interrupt-hopp mellom bokstaver styres av
   // seq-vernet i scheduleTTS, så gamle lyder kan ikke lekke inn etter ordet.
-  sfx.ladder(0);
+  sfx.ladder(tone);
   speak(LYD[L]||L, {rate:0.55, pitch:1.1});
 }
 
@@ -770,29 +770,30 @@ function soundOutWord(){
   }, W.length*step+500);
 }
 
-// Seiersstaving: visual + musical only, then speaks the whole word once.
-// This fixes the root cause of extra spoken letters after completed words.
+// Seiersstaving: SIER hver bokstav i takt med at ruten lyser (med stigende
+// tone), og sier hele ordet til slutt. Bokstav-lekkasje etter ordet hindres
+// av TTS_SEQ-vernet, så det er trygt å snakke her igjen.
 function spellOutWord(cb){
   const seq=clearTTS(true);
   const slots=[...document.querySelectorAll("#slots .slot")];
-  const W=currentWord.w, step=360;
+  const W=currentWord.w, step=650; // rom nok til at hver bokstav blir sagt ferdig
   W.split("").forEach((L,i)=>{
     scheduleTTS(seq, ()=>{
       slots.forEach(s=>s.classList.remove("say"));
       if(slots[i]) slots[i].classList.add("say");
-      sfx.ladder(i);
+      speakSound(L, i);
     }, i*step);
   });
   scheduleTTS(seq, ()=>{
     slots.forEach(s=>s.classList.remove("say"));
     speakWholeWord(W, {rate:0.64});
     sfx.chord();
-  }, W.length*step+120);
+  }, W.length*step+350);
   const wordRef=currentWord;
   setTimeout(()=>{
     // This is game progression, not TTS. Do not let a speaker tap cancel it.
     if(currentWord===wordRef && run && !run.failed) cb();
-  }, W.length*step+900);
+  }, W.length*step+1100);
 }
 
 // ---------- LÆRINGSSYSTEM ----------
