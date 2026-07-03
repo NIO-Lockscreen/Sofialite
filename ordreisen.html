@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ordreisen">
+<meta name="theme-color" content="#CDEBFF">
+<title>Ordreisen 🌟</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --rosa:#FF6FA5; --sol:#FFC93C; --mint:#3ED9A4; --himmel:#59B7FF;
+    --drue:#8B5CF6; --natt:#2A2250; --krem:#FFF9EF; --skygge:rgba(42,34,80,.18);
+    --tile-bg:#fff; --tile-sh:#e3d7f7;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+    touch-action:manipulation; -webkit-touch-callout:none;}
+  html,body{margin:0; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{
+    position:fixed; inset:0; width:100%;
+    height:100dvh; min-height:-webkit-fill-available;
+    font-family:'Fredoka',ui-rounded,'Comic Sans MS',sans-serif;
+    background:linear-gradient(180deg,#CDEBFF 0%,#FFEFF6 60%,#FFF9E3 100%);
+    color:var(--natt); display:flex; flex-direction:column;
+  }
+  body.theme-regnbue{--tile-bg:linear-gradient(135deg,#ffe3ef,#e3f4ff,#e9ffe9); --tile-sh:#ffc7de;}
+  body.theme-natt{--tile-bg:linear-gradient(135deg,#2A2250,#4a3a8f); --tile-sh:#181240;}
+  body.theme-natt .tile,body.theme-natt .wordbtn{color:#FFE58A;}
+  body.theme-godteri{--tile-bg:linear-gradient(135deg,#fff0b3,#ffd1e8); --tile-sh:#f5b8d6;}
+  body.lower .tile, body.lower .slot, body.lower .wordbtn{text-transform:lowercase;}
+
+  .screen{position:absolute; inset:0; display:none; flex-direction:column; align-items:center; overflow:hidden;
+    padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+            calc(14px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));}
+  .screen.active{display:flex;}
+
+  #topbar{width:100%; max-width:520px; display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .pill{background:#fff; border-radius:999px; padding:6px 14px; font-weight:700; font-size:18px;
+    box-shadow:0 3px 0 var(--skygge); display:flex; align-items:center; gap:6px; white-space:nowrap;}
+  .pill small{font-weight:600; font-size:13px; opacity:.7;}
+
+  #path{display:flex; gap:6px; align-items:center; margin:10px 0 4px;}
+  .dot{width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 2px 0 var(--skygge); transition:all .3s; display:flex;align-items:center;justify-content:center;font-size:11px;}
+  .dot.done{background:var(--mint); transform:scale(1.05);}
+  .dot.now{background:var(--sol); transform:scale(1.5); box-shadow:0 0 0 4px rgba(255,201,60,.35);}
+  .dot.chest-dot{border-radius:5px;}
+
+  .bigbtn{
+    font-family:inherit; font-weight:700; font-size:26px; color:#fff; border:none; cursor:pointer;
+    background:var(--rosa); border-radius:26px; padding:18px 38px;
+    box-shadow:0 6px 0 #d84f85, 0 10px 18px var(--skygge); transition:transform .1s, box-shadow .1s;
+  }
+  .bigbtn:active{transform:translateY(4px); box-shadow:0 2px 0 #d84f85;}
+  .bigbtn.mint{background:var(--mint); box-shadow:0 6px 0 #26ad7f,0 10px 18px var(--skygge);}
+  .bigbtn.mint:active{box-shadow:0 2px 0 #26ad7f;}
+  .bigbtn.sky{background:var(--himmel); box-shadow:0 6px 0 #3a92d6,0 10px 18px var(--skygge);}
+  .bigbtn.sky:active{box-shadow:0 2px 0 #3a92d6;}
+  .bigbtn.drue{background:var(--drue); box-shadow:0 6px 0 #6b3fd1,0 10px 18px var(--skygge);}
+  .bigbtn.drue:active{box-shadow:0 2px 0 #6b3fd1;}
+  .smallbtn{font-family:inherit; font-weight:700; font-size:17px; color:#fff; border:none; cursor:pointer;
+    background:var(--himmel); border-radius:16px; padding:10px 16px; box-shadow:0 4px 0 #3a92d6;}
+  .smallbtn:active{transform:translateY(3px); box-shadow:0 1px 0 #3a92d6;}
+
+  #scr-start{justify-content:center; gap:16px;}
+  #logo{font-size:52px; font-weight:700; text-align:center; line-height:1.05;
+    background:linear-gradient(90deg,var(--rosa),var(--drue),var(--himmel)); -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:bop 2.4s ease-in-out infinite;}
+  @keyframes bop{0%,100%{transform:scale(1) rotate(-1.5deg)}50%{transform:scale(1.05) rotate(1.5deg)}}
+  #logo-emoji{font-size:80px; text-align:center; animation:floaty 3s ease-in-out infinite;}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+  .startstats{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:420px;}
+  #xp-wrap{width:min(80vw,320px); text-align:center;}
+  #xp-label{font-weight:700; font-size:18px; margin-bottom:4px;}
+  #xp-bar{height:18px; background:#fff; border-radius:99px; box-shadow:inset 0 2px 4px var(--skygge); overflow:hidden;}
+  #xp-fill{height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg,var(--sol),var(--rosa)); transition:width .8s cubic-bezier(.3,1,.4,1);}
+
+  #big-emoji{font-size:110px; line-height:1; margin:8px 0 2px; animation:popin .45s cubic-bezier(.2,1.6,.4,1);}
+  @keyframes popin{from{transform:scale(0) rotate(-20deg); opacity:0}to{transform:scale(1) rotate(0); opacity:1}}
+  #big-emoji.wave{animation:wavey .8s ease-in-out 2;}
+  @keyframes wavey{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg) scale(1.08)}75%{transform:rotate(14deg) scale(1.08)}}
+  #instruction{font-size:20px; font-weight:600; opacity:.85; margin:2px 0 6px; text-align:center;}
+  .helper-row{display:flex; gap:12px; margin-top:4px;}
+  .roundbtn{background:#fff; border:none; border-radius:50%; width:54px; height:54px; font-size:26px; cursor:pointer;
+    box-shadow:0 4px 0 var(--skygge);}
+  .roundbtn:active{transform:translateY(3px); box-shadow:0 1px 0 var(--skygge);}
+
+  #slots{display:flex; gap:10px; margin:12px 0; min-height:74px;}
+  .slot{width:64px; height:70px; border-radius:18px; background:rgba(255,255,255,.55);
+    border:3px dashed rgba(42,34,80,.25); display:flex; align-items:center; justify-content:center;
+    font-size:38px; font-weight:700; transition:all .2s;}
+  .slot.filled{background:#fff; border:3px solid var(--himmel); box-shadow:0 4px 0 var(--skygge); animation:slotpop .25s cubic-bezier(.2,1.6,.4,1); cursor:pointer;}
+  .slot.locked{border-color:var(--mint); background:#E8FFF6; color:#1d9c72;}
+  .slot.say{background:#FFF3C9!important; border-color:var(--sol)!important; transform:scale(1.18);}
+  @keyframes slotpop{from{transform:scale(.6)}to{transform:scale(1)}}
+
+  #tiles{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:6px; max-width:440px;}
+  .tile{
+    width:72px; height:76px; border-radius:20px; background:var(--tile-bg); border:none; cursor:pointer;
+    font-family:inherit; font-size:40px; font-weight:700; color:var(--natt);
+    box-shadow:0 6px 0 var(--tile-sh), 0 8px 14px var(--skygge); transition:transform .08s;
+  }
+  .tile:active{transform:translateY(4px) scale(.97);}
+  .tile.used{opacity:0; pointer-events:none; transform:scale(.3);}
+  .tile.shake{animation:shake .45s;}
+  .tile.gull{background:linear-gradient(135deg,#FFE58A,#FFC93C)!important; box-shadow:0 6px 0 #d6a000, 0 0 18px #ffd97099; animation:gullglimt 1.2s ease-in-out infinite;}
+  @keyframes gullglimt{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px) rotate(-4deg)}40%{transform:translateX(9px) rotate(4deg)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+
+  .wordbtn{
+    font-family:inherit; font-weight:700; font-size:34px; letter-spacing:4px; color:var(--natt);
+    background:var(--tile-bg); border:none; border-radius:22px; padding:16px 30px; cursor:pointer; margin:7px;
+    box-shadow:0 6px 0 var(--tile-sh), 0 8px 14px var(--skygge); transition:transform .08s;
+  }
+  .wordbtn:active{transform:translateY(4px);}
+  .wordbtn.shake{animation:shake .45s;}
+
+  #feedback{min-height:34px; font-size:22px; font-weight:700; margin-top:10px; text-align:center; transition:opacity .2s;}
+  .fb-good{color:#1d9c72;} .fb-try{color:#b56ae0;}
+  .pump{animation:pump .4s cubic-bezier(.2,1.8,.4,1);}
+  @keyframes pump{50%{transform:scale(1.5) rotate(6deg)}}
+
+  .fly-star{position:fixed; font-size:26px; pointer-events:none; z-index:60; transition:all .8s cubic-bezier(.3,.7,.4,1);}
+
+  /* ---------- KISTE ---------- */
+  #scr-chest{justify-content:center; gap:14px;}
+  #chest-emoji{font-size:130px; cursor:pointer; transition:transform .15s; animation:chestwiggle 1.4s ease-in-out infinite; position:relative; z-index:2;}
+  @keyframes chestwiggle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+  #chest-emoji.tap1{animation:tapshake1 .4s;}
+  #chest-emoji.tap2{animation:tapshake2 .5s;}
+  @keyframes tapshake1{0%,100%{transform:rotate(0) scale(1)}30%{transform:rotate(-8deg) scale(1.08)}70%{transform:rotate(8deg) scale(1.08)}}
+  @keyframes tapshake2{0%,100%{transform:rotate(0) scale(1)}20%{transform:rotate(-14deg) scale(1.15)}50%{transform:rotate(14deg) scale(1.18)}80%{transform:rotate(-8deg) scale(1.1)}}
+  #chest-cracks{font-size:30px; height:34px; letter-spacing:8px;}
+  #loot-reveal{font-size:120px; opacity:0; transform:scale(0);}
+  #loot-reveal.show{animation:lootpop .7s cubic-bezier(.2,1.7,.35,1) forwards;}
+  @keyframes lootpop{from{opacity:0; transform:scale(0) rotate(-30deg)}to{opacity:1; transform:scale(1) rotate(0)}}
+  #loot-name{font-size:24px; font-weight:700; min-height:30px;}
+  .rar-vanlig{color:#4c9e6b;} .rar-sjelden{color:#2f7fd6;} .rar-episk{color:#8B5CF6;} .rar-legendarisk{color:#d69a00; text-shadow:0 0 14px #ffd970;}
+  #chest-hint{font-size:19px; font-weight:600; opacity:.75; text-align:center;}
+  .glowring{position:absolute; width:260px; height:260px; border-radius:50%; pointer-events:none; z-index:1;
+    opacity:0; transition:opacity .4s; background:radial-gradient(circle,rgba(255,220,120,.55),transparent 70%);}
+  .glowring.on{opacity:1; animation:ringspin 2.5s linear infinite;}
+  .glowring.g-vanlig{background:radial-gradient(circle,rgba(120,220,160,.5),transparent 70%);}
+  .glowring.g-sjelden{background:radial-gradient(circle,rgba(90,170,255,.55),transparent 70%);}
+  .glowring.g-episk{background:radial-gradient(circle,rgba(160,110,255,.6),transparent 70%);}
+  .glowring.g-legendarisk{background:radial-gradient(circle,rgba(255,210,90,.75),transparent 68%);}
+  @keyframes ringspin{from{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.12)}to{transform:rotate(360deg) scale(1)}}
+
+  #scr-end{justify-content:center; gap:10px; text-align:center;}
+  #end-title{font-size:36px; font-weight:700;}
+  #end-stats{font-size:21px; font-weight:600; line-height:1.65;}
+  #end-lesson{font-size:18px; font-weight:600; background:#fff; padding:12px 20px; border-radius:20px;
+    box-shadow:0 4px 0 var(--skygge); max-width:380px;}
+  #levelup-banner{display:none; font-size:24px; font-weight:700; color:#fff; background:linear-gradient(90deg,var(--sol),var(--rosa));
+    padding:10px 24px; border-radius:20px; box-shadow:0 5px 0 #d6a000; animation:pump .6s;}
+
+  /* ---------- BOSS ---------- */
+  #boss-bar{display:none; flex-direction:column; align-items:center; gap:2px; margin-top:4px;}
+  #boss-bar.on{display:flex;}
+  #boss-emoji{font-size:96px; line-height:1; animation:bossbop 1.6s ease-in-out infinite; filter:drop-shadow(0 6px 10px rgba(42,34,80,.3));}
+  @keyframes bossbop{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.04)}}
+  #boss-emoji.hit{animation:bosshit .5s;}
+  @keyframes bosshit{0%{transform:scale(1)}25%{transform:scale(.85) rotate(-10deg); filter:brightness(2)}60%{transform:scale(1.1) rotate(6deg)}100%{transform:scale(1)}}
+  #boss-emoji.dead{animation:bossdead 1s forwards;}
+  @keyframes bossdead{to{transform:translateY(60px) rotate(180deg) scale(.2); opacity:0;}}
+  #boss-name{font-weight:700; font-size:20px; color:var(--drue);}
+  #boss-hp{font-size:24px; letter-spacing:3px;}
+  .boss-mode #big-emoji{font-size:64px; margin:0;}
+  #proj{position:fixed; font-size:34px; z-index:65; pointer-events:none; transition:all .5s cubic-bezier(.4,0,.6,1);}
+
+  /* ---------- BOK & SETT ---------- */
+  #scr-book{padding-top:14px;}
+  #book-scroll{width:100%; max-width:520px; overflow-y:auto; padding:10px 4px 110px;
+    overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;}
+  #sets-wrap{display:flex; flex-direction:column; gap:10px; margin-bottom:14px;}
+  .set-card{background:#fff; border-radius:18px; padding:10px 14px; box-shadow:0 4px 0 var(--skygge);}
+  .set-head{display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:17px;}
+  .set-emojis{font-size:24px; letter-spacing:4px; margin:4px 0;}
+  .set-emojis .miss{filter:grayscale(1); opacity:.35;}
+  .set-meter{height:10px; background:#f0ecff; border-radius:99px; overflow:hidden;}
+  .set-fill{height:100%; background:linear-gradient(90deg,var(--mint),var(--himmel)); border-radius:99px; transition:width .5s;}
+  .set-claim{margin-top:6px;}
+  .set-done{color:#1d9c72; font-weight:700; font-size:15px;}
+  #book-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:10px;}
+  .book-cell{background:#fff; border-radius:18px; aspect-ratio:1; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; font-size:38px; box-shadow:0 4px 0 var(--skygge); position:relative;}
+  .book-cell.locked{background:rgba(255,255,255,.4); filter:grayscale(1); opacity:.55; font-size:30px;}
+  .book-cell .cnt{position:absolute; bottom:4px; right:6px; font-size:12px; font-weight:700; color:#999;}
+  .book-cell.rar-episk{outline:3px solid var(--drue);} .book-cell.rar-legendarisk{outline:3px solid var(--sol); box-shadow:0 4px 0 var(--skygge),0 0 16px #ffd97088;}
+  #book-bottom{position:fixed; bottom:calc(14px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); display:flex; gap:10px;}
+
+  /* ---------- BUTIKK (myntbruk) ---------- */
+  #shop-ovl,#settings-ovl,#stats-ovl{position:fixed; inset:0; background:rgba(42,34,80,.5); display:none; align-items:center; justify-content:center; z-index:90;}
+  #shop-ovl.on,#settings-ovl.on,#stats-ovl.on{display:flex;}
+  .ovl-box{background:var(--krem); border-radius:28px; padding:22px; display:flex; flex-direction:column; gap:12px;
+    width:min(92vw,380px); max-height:84vh; box-shadow:0 12px 30px rgba(42,34,80,.35); text-align:center;}
+  .ovl-box h2{margin:0; font-size:24px;}
+  #shop-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; overflow-y:auto; padding:4px;
+    overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;}
+  .shop-cell{background:#fff; border:none; border-radius:16px; aspect-ratio:1; font-size:32px; cursor:pointer;
+    box-shadow:0 4px 0 var(--skygge); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:inherit;}
+  .shop-cell small{font-size:12px; font-weight:700; color:#b58900;}
+  .shop-cell:disabled{opacity:.4;}
+  #name-input{font-family:inherit; font-size:24px; font-weight:700; text-align:center; border:3px solid var(--himmel);
+    border-radius:16px; padding:10px; width:100%; color:var(--natt); background:#fff;}
+  #greeting{font-size:24px; font-weight:700; color:var(--drue);}
+  #settings-btn{position:absolute; top:calc(14px + env(safe-area-inset-top)); right:calc(14px + env(safe-area-inset-right));}
+  #fs-btn{position:absolute; top:calc(14px + env(safe-area-inset-top)); left:calc(14px + env(safe-area-inset-left));}
+  .theme-row{display:flex; gap:8px; justify-content:center; flex-wrap:wrap;}
+  .theme-chip{border:3px solid transparent; border-radius:14px; padding:8px 12px; font-family:inherit; font-weight:700; font-size:15px; cursor:pointer; background:#fff; box-shadow:0 3px 0 var(--skygge);}
+  .theme-chip.sel{border-color:var(--mint);}
+  .theme-chip:disabled{opacity:.4;}
+  #stats-list{text-align:left; font-size:16px; font-weight:600; overflow-y:auto; line-height:1.7;
+    overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;}
+  .toggle-row{display:flex; align-items:center; justify-content:space-between; background:#fff; border-radius:14px; padding:10px 14px; font-weight:700;}
+  .toggle-row input{width:24px;height:24px;}
+
+  .conf{position:fixed; top:-20px; font-size:22px; pointer-events:none; z-index:50; animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
+  #toast{position:fixed; top:14px; left:50%; transform:translateX(-50%) translateY(-90px); z-index:95;
+    background:var(--natt); color:#fff; font-weight:700; font-size:18px; padding:12px 22px; border-radius:999px;
+    transition:transform .35s cubic-bezier(.2,1.4,.4,1); text-align:center; max-width:88vw;}
+  #toast.show{transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:420px){
+    .tile{width:60px;height:66px;font-size:34px;} .slot{width:52px;height:60px;font-size:32px;}
+    #big-emoji{font-size:92px;} #logo{font-size:42px;}
+  }
+  /* ---------- iPad: større trykkeflater ---------- */
+  @media (min-width:700px) and (min-height:700px){
+    .tile{width:96px; height:100px; font-size:52px; border-radius:26px;}
+    .slot{width:86px; height:94px; font-size:52px; border-radius:24px;}
+    #tiles{max-width:640px; gap:16px;}
+    #slots{gap:14px;}
+    #big-emoji{font-size:150px;}
+    #instruction{font-size:26px;}
+    #feedback{font-size:28px; min-height:40px;}
+    .wordbtn{font-size:44px; padding:22px 44px; margin:10px;}
+    .bigbtn{font-size:32px; padding:24px 52px;}
+    .roundbtn{width:68px; height:68px; font-size:32px;}
+    .pill{font-size:22px; padding:8px 18px;}
+    .dot{width:20px; height:20px;}
+    #logo{font-size:74px;} #logo-emoji{font-size:110px;}
+    #greeting{font-size:32px;}
+    #topbar{max-width:680px;}
+    #boss-emoji{font-size:130px;}
+    #boss-name{font-size:26px;} #boss-hp{font-size:30px;}
+    #chest-emoji{font-size:170px;}
+    #loot-reveal{font-size:160px;}
+    .glowring{width:340px; height:340px;}
+    #book-scroll{max-width:640px;}
+    .book-cell{font-size:46px;}
+    #end-title{font-size:46px;} #end-stats{font-size:26px;} #end-lesson{font-size:22px; max-width:480px;}
+    .ovl-box{width:min(80vw,460px);}
+  }
+  /* ---------- iPad liggende: kompakt vertikalt så alt får plass ---------- */
+  @media (orientation:landscape) and (max-height:920px) and (min-width:900px){
+    #big-emoji{font-size:96px; margin:2px 0;}
+    .helper-row{margin-top:0;}
+    #instruction{margin:0 0 4px;}
+    #slots{margin:6px 0; min-height:0;}
+    .tile{width:82px; height:86px; font-size:44px;}
+    .slot{width:74px; height:80px; font-size:44px;}
+    #feedback{margin-top:4px;}
+    #boss-emoji{font-size:90px;}
+    .boss-mode #big-emoji{font-size:56px;}
+  }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+</head>
+<body>
+
+<!-- START -->
+<div class="screen active" id="scr-start">
+  <button class="roundbtn" id="fs-btn" onclick="toggleFullscreen()">⛶</button>
+  <button class="roundbtn" id="settings-btn" onclick="openSettings()">⚙️</button>
+  <div id="logo-emoji">🦄</div>
+  <div id="logo">ORDREISEN</div>
+  <div id="greeting"></div>
+  <div id="xp-wrap">
+    <div id="xp-label"></div>
+    <div id="xp-bar"><div id="xp-fill"></div></div>
+  </div>
+  <div class="startstats" id="start-stats"></div>
+  <button class="bigbtn" onclick="startRun()">🚀 START REISEN</button>
+  <button class="bigbtn drue" onclick="showBook()">📖 EMOJIBOKA MI</button>
+</div>
+
+<!-- INNSTILLINGER -->
+<div id="settings-ovl">
+  <div class="ovl-box">
+    <h2>⚙️ Innstillinger</h2>
+    <div style="font-weight:600">Hva heter du?</div>
+    <input id="name-input" maxlength="14" value="Sofia">
+    <button class="smallbtn" onclick="testVoice()">🔊 Test stemmen</button>
+    <div class="toggle-row" id="lower-row" style="display:none">
+      <span>abc små bokstaver</span>
+      <input type="checkbox" id="lower-toggle" onchange="toggleLower(this.checked)">
+    </div>
+    <div style="font-weight:600">Flisfarger:</div>
+    <div class="theme-row" id="theme-row"></div>
+    <button class="smallbtn" style="background:var(--drue);box-shadow:0 4px 0 #6b3fd1" onclick="openStats()">📊 For voksne</button>
+    <button class="bigbtn mint" style="font-size:20px;padding:12px" onclick="saveSettings()">✅ LAGRE</button>
+  </div>
+</div>
+
+<!-- FORELDRESTATISTIKK -->
+<div id="stats-ovl">
+  <div class="ovl-box">
+    <h2>📊 Fremgang</h2>
+    <div id="stats-list"></div>
+    <button class="smallbtn" onclick="document.getElementById('stats-ovl').classList.remove('on')">Lukk</button>
+  </div>
+</div>
+
+<!-- OPPGAVE -->
+<div class="screen" id="scr-game">
+  <div id="topbar">
+    <div class="pill">✨ <span id="star-count">0</span></div>
+    <div id="path"></div>
+    <div class="pill">🔥 <span id="streak-count">0</span></div>
+  </div>
+  <div id="boss-bar">
+    <div id="boss-emoji">👾</div>
+    <div id="boss-name"></div>
+    <div id="boss-hp"></div>
+  </div>
+  <div id="big-emoji">☀️</div>
+  <div class="helper-row">
+    <button class="roundbtn" onclick="speakWord()" title="Hør ordet">🔊</button>
+    <button class="roundbtn" onclick="soundOutWord()" title="Lyder ordet">🦉</button>
+  </div>
+  <div id="instruction">Stav ordet!</div>
+  <div id="slots"></div>
+  <div id="tiles"></div>
+  <div id="feedback"></div>
+</div>
+
+<!-- KISTE -->
+<div class="screen" id="scr-chest">
+  <div class="glowring" id="glowring"></div>
+  <div id="chest-emoji" onclick="tapChest()">🎁</div>
+  <div id="chest-cracks"></div>
+  <div id="loot-reveal"></div>
+  <div id="loot-name"></div>
+  <div id="chest-hint">Trykk på gaven! 👆</div>
+  <button class="bigbtn mint" id="chest-next" style="display:none" onclick="afterChest()">VIDERE ➡️</button>
+</div>
+
+<!-- SLUTT -->
+<div class="screen" id="scr-end">
+  <div id="levelup-banner"></div>
+  <div id="end-title">🎉 FOR EN REISE!</div>
+  <div id="end-stats"></div>
+  <div id="end-lesson"></div>
+  <button class="bigbtn" onclick="startRun()">🔁 NY REISE</button>
+  <button class="bigbtn drue" onclick="showBook()">📖 EMOJIBOKA</button>
+  <button class="bigbtn sky" onclick="goHome()">🏠 HJEM</button>
+</div>
+
+<!-- BOK -->
+<div class="screen" id="scr-book">
+  <div class="pill" style="font-size:22px">📖 Emojiboka <small id="book-progress"></small> &nbsp;🪙<span id="coin-count">0</span></div>
+  <div id="book-scroll">
+    <div id="sets-wrap"></div>
+    <div id="book-grid"></div>
+  </div>
+  <div id="book-bottom">
+    <button class="bigbtn drue" style="font-size:19px;padding:12px 20px" onclick="openShop()">🪙 VELG EN SKATT</button>
+    <button class="bigbtn sky" style="font-size:19px;padding:12px 20px" onclick="goHome()">🏠 TILBAKE</button>
+  </div>
+</div>
+
+<!-- BUTIKK -->
+<div id="shop-ovl">
+  <div class="ovl-box">
+    <h2>🪙 Velg en skatt</h2>
+    <div style="font-weight:600">Du har <b id="shop-coins">0</b> 🪙 (fra like skatter)</div>
+    <div id="shop-grid"></div>
+    <button class="smallbtn" onclick="document.getElementById('shop-ovl').classList.remove('on')">Lukk</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* =========================================================
+   ORDREISEN v3 — norsk lese-roguelike for Sofia (5)
+   Lydmetoden + adaptiv vanskelighet + variabel belønning
+   ========================================================= */
+
+// ---------- ORD ----------
+const WORDS = {
+  2:[["IS","🍦"],["KU","🐮"],["BI","🐝"],["ØY","🏝️"],["TE","🍵"]],
+  3:[["SOL","☀️"],["HUS","🏠"],["BIL","🚗"],["BOK","📖"],["EGG","🥚"],["MUS","🐭"],["SKO","👟"],["APE","🐒"],["TRE","🌳"],["BÅT","⛵"],["FLY","✈️"],["REV","🦊"],["ULV","🐺"],["SAU","🐑"],["OST","🧀"],["SEL","🦭"],["SNØ","❄️"],["TOG","🚂"],["ØRN","🦅"],["HAI","🦈"]],
+  4:[["KATT","🐱"],["HUND","🐶"],["FISK","🐟"],["EPLE","🍎"],["HATT","🎩"],["LØVE","🦁"],["SOPP","🍄"],["BALL","⚽"],["KAKE","🍰"],["STOL","🪑"],["MELK","🥛"],["BUSS","🚌"],["MÅNE","🌙"],["GRIS","🐷"],["UGLE","🦉"],["REGN","🌧️"],["VANN","💧"],["BRØD","🍞"],["ROSE","🌹"]],
+  5:[["BJØRN","🐻"],["TIGER","🐯"],["DRAGE","🐉"],["PIZZA","🍕"],["ROBOT","🤖"],["KRONE","👑"],["PANDA","🐼"],["KOALA","🐨"],["SEBRA","🦓"],["LAMPE","💡"],["FROSK","🐸"],["SLOTT","🏰"],["KLOVN","🤡"]]
+};
+const ALL_LETTERS = "ABDEFGHIJKLMNOPRSTUVYÆØÅ".split("");
+
+// Lydmetoden: bokstavLYDER (ikke navn) – slik norske skoler lærer avkoding
+const LYD = {A:"a",B:"b",D:"d",E:"e",F:"fff",G:"g",H:"h",I:"i",J:"jjj",K:"k",L:"lll",M:"mmm",
+  N:"nnn",O:"o",P:"p",R:"rrr",S:"sss",T:"t",U:"u",V:"vvv",Y:"y",Æ:"æ",Ø:"ø",Å:"å"};
+
+// Bokstaver barn ofte blander – brukes som smarte lurebokstaver
+const FORVEKSLING = {B:["D","P"],D:["B","T"],P:["B"],T:["D"],M:["N"],N:["M"],E:["Æ","I"],Æ:["E","Å"],
+  O:["Å","U"],Å:["O","Æ"],U:["Y","O"],Y:["U","I"],I:["Y","E"],F:["V"],V:["F"],G:["K"],K:["G"],S:["F"],R:["L"],L:["R"]};
+function smartDecoy(letter, exclude){
+  const cands=(FORVEKSLING[letter]||[]).filter(l=>!exclude.includes(l));
+  if(cands.length && Math.random()<0.7) return pick(cands);
+  return pick(ALL_LETTERS.filter(l=>!exclude.includes(l)));
+}
+
+// ---------- LOOT ----------
+const LOOT = [
+  ...["🍓","🍌","🍪","🎈","🧸","🐤","🦆","🐢","🌼","🍭"].map(e=>({e,r:"vanlig"})),
+  ...["🦋","🐬","🦜","🌈","🚀","🎠","🍩","🧁","⛄","🪁"].map(e=>({e,r:"sjelden"})),
+  ...["🦄","🐙","🦖","🛸","🪅","🧚","🎪","💎"].map(e=>({e,r:"episk"})),
+  ...["🐲","🌟","🦕","🧜‍♀️","👑","✨"].map(e=>({e,r:"legendarisk"})),
+];
+const RAR_NAME = {vanlig:"Vanlig", sjelden:"Sjelden! 💙", episk:"EPISK! 💜", legendarisk:"⭐ LEGENDARISK! ⭐"};
+const RAR_WEIGHT = {vanlig:55, sjelden:28, episk:13, legendarisk:4};
+const SHOP_COST = {vanlig:6, sjelden:6, episk:12, legendarisk:20};
+
+// Samle-sett med mesterpremie
+const SETS = [
+  {navn:"Dyrevenner 🐾", emojis:["🐤","🦆","🐢","🦋","🐬","🦜"], premie:15},
+  {navn:"Godte-gjengen 🍭", emojis:["🍓","🍌","🍪","🍭","🍩","🧁"], premie:15},
+  {navn:"Magi-mester ✨", emojis:["🦄","🧚","🌈","🌟","🧜‍♀️","✨"], premie:25},
+  {navn:"Eventyrfarer 🏰", emojis:["🚀","🛸","🦖","🦕","🐲","👑"], premie:25},
+];
+
+// ---------- BOSSER (flere låses opp med nivå!) ----------
+const BOSSES = [
+  {e:"👾", navn:"Glemme-Trollet", hp:2, lvl:1},
+  {e:"🐉", navn:"Ordormen",       hp:2, lvl:1},
+  {e:"🦖", navn:"Bokstav-Rex",    hp:2, lvl:1},
+  {e:"🧌", navn:"Surrehodet",     hp:2, lvl:2},
+  {e:"🐙", navn:"Blekk-Klatten",  hp:2, lvl:3},
+  {e:"🦇", navn:"Natta-Napperen", hp:3, lvl:5},
+  {e:"🐲", navn:"Stor-Draken",    hp:3, lvl:7},
+  {e:"👹", navn:"Ord-Kongen",     hp:3, lvl:10},
+];
+
+// ---------- TEMA (låses opp med nivå) ----------
+const THEMES = [
+  {id:"standard", navn:"⬜ Vanlig",   lvl:1},
+  {id:"regnbue",  navn:"🌈 Regnbue",  lvl:2},
+  {id:"godteri",  navn:"🍬 Godteri",  lvl:4},
+  {id:"natt",     navn:"🌙 Natt",     lvl:6},
+];
+
+// ---------- LAGRING ----------
+let SAVE = {name:"Sofia", collection:{}, coins:0, totalStars:0, bestStreak:0, runs:0, wordsSolved:0,
+  bossesBeaten:0, wordStats:{}, letterStats:{}, xp:0, chests:0, sinceLeg:0, recent:[],
+  lowerUnlocked:false, lowerOn:false, theme:"standard", setsClaimed:{}};
+async function loadSave(){
+  try{
+    const r = await window.storage.get("ordreisen-save");
+    if(r && r.value) SAVE = {...SAVE, ...JSON.parse(r.value)};
+  }catch(e){}
+  applyTheme(); applyLower(); renderStartStats();
+}
+async function persist(){
+  try{ await window.storage.set("ordreisen-save", JSON.stringify(SAVE)); }catch(e){}
+}
+
+// ---------- NIVÅ / XP ----------
+function levelOf(xp){ let n=1; while(xp >= xpNeed(n)) n++; return n; }
+function xpNeed(lvl){ return lvl*lvl*15; } // xp for å NÅ lvl+1
+function giveXP(n){
+  const before=levelOf(SAVE.xp);
+  SAVE.xp+=n;
+  const after=levelOf(SAVE.xp);
+  if(after>before) run && (run.levelUps=(run.levelUps||0)+ (after-before));
+  return after>before ? after : 0;
+}
+function levelPerks(lvl){
+  const perks=[];
+  THEMES.forEach(t=>{ if(t.lvl===lvl) perks.push("Ny flisfarge: "+t.navn); });
+  BOSSES.forEach(b=>{ if(b.lvl===lvl) perks.push("Ny boss: "+b.e+" "+b.navn); });
+  return perks;
+}
+
+// ---------- LYD ----------
+let AC=null;
+function ac(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return AC; }
+function tone(f, t0, dur, type="sine", vol=0.18){
+  const c=ac(); if(!c) return;
+  const o=c.createOscillator(), g=c.createGain();
+  o.type=type; o.frequency.setValueAtTime(f, c.currentTime+t0);
+  g.gain.setValueAtTime(0, c.currentTime+t0);
+  g.gain.linearRampToValueAtTime(vol, c.currentTime+t0+0.015);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+t0+dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(c.currentTime+t0); o.stop(c.currentTime+t0+dur+0.05);
+}
+// Pentaton tonestige – hver bokstav i ordet klatrer høyere 🎵
+const STIGE=[523,587,659,784,880,988,1175];
+const sfx = {
+  pop(){ tone(660,0,.08,"triangle",.14); },
+  ladder(i){ tone(STIGE[Math.min(i,STIGE.length-1)],0,.16,"triangle",.16); },
+  chord(){ [523,659,784].forEach(f=>tone(f,0,.5,"triangle",.13)); tone(1047,.1,.45,"sine",.1); },
+  correct(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.07,.18,"triangle",.16)); },
+  wrong(){ tone(220,0,.16,"sine",.10); tone(196,.14,.2,"sine",.08); },
+  star(){ tone(1200,0,.1,"sine",.1); tone(1600,.08,.14,"sine",.09); },
+  coin(){ tone(988,0,.09,"square",.08); tone(1319,.09,.15,"square",.08); },
+  streak(n){ for(let i=0;i<Math.min(n,6);i++) tone(600+i*140,i*.05,.12,"triangle",.13); },
+  fanfare(){ [523,523,659,784,1047,784,1047].forEach((f,i)=>tone(f,i*.11,.22,"triangle",.17)); },
+  levelup(){ [392,523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.09,.25,"triangle",.16)); },
+  crack(){ tone(180,0,.12,"sawtooth",.08); tone(140,.05,.1,"sawtooth",.06); },
+  chest(){ tone(300,0,.25,"sawtooth",.05); [880,1100,1320,1760].forEach((f,i)=>tone(f,.25+i*.08,.2,"sine",.12)); },
+};
+
+// ---------- NORSK TALE (TTS) ----------
+let currentWord=null;
+let NB_VOICE=null;
+function pickVoice(){
+  if(!window.speechSynthesis) return;
+  const vs=speechSynthesis.getVoices();
+  NB_VOICE =
+    vs.find(v=>/^(nb|no)/i.test(v.lang) && /premium|enhanced|natural/i.test(v.name)) ||
+    vs.find(v=>/^nb/i.test(v.lang)) ||
+    vs.find(v=>/^no/i.test(v.lang)) ||
+    vs.find(v=>/^(da|sv)/i.test(v.lang)) || null;
+}
+if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text, {rate=0.8, pitch=1.15, interrupt=true}={}){
+  if(!window.speechSynthesis || !text) return;
+  try{
+    if(interrupt) speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang="nb-NO"; u.rate=rate; u.pitch=pitch;
+    if(NB_VOICE) u.voice=NB_VOICE;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function speakWord(txt){
+  const w = (typeof txt==="string") ? txt : (currentWord ? currentWord.w : null);
+  if(w) speak(w.toLowerCase(), {rate:0.7});
+}
+function speakSound(L){ speak(LYD[L]||L.toLowerCase(), {rate:0.55, pitch:1.2}); } // lydmetoden!
+
+// 🦉 Lyder ordet: sakte lyd-for-lyd, så smelter det sammen til ordet
+function soundOutWord(){
+  if(!currentWord) return;
+  resetIdle();
+  const W=currentWord.w, slots=[...document.querySelectorAll("#slots .slot")];
+  W.split("").forEach((L,i)=>{
+    setTimeout(()=>{
+      slots.forEach(s=>s.classList.remove("say"));
+      if(slots[i]) slots[i].classList.add("say");
+      speakSound(L);
+    }, i*750);
+  });
+  setTimeout(()=>{
+    slots.forEach(s=>s.classList.remove("say"));
+    speak(W.toLowerCase(), {rate:0.65});
+  }, W.length*750+250);
+}
+
+// Seiersstaving: lyd-for-lyd med lysende ruter, så hele ordet
+function spellOutWord(cb){
+  const slots=[...document.querySelectorAll("#slots .slot")];
+  const W=currentWord.w, step=520;
+  W.split("").forEach((L,i)=>{
+    setTimeout(()=>{
+      slots.forEach(s=>s.classList.remove("say"));
+      if(slots[i]) slots[i].classList.add("say");
+      speakSound(L);
+      sfx.ladder(i);
+    }, i*step);
+  });
+  setTimeout(()=>{
+    slots.forEach(s=>s.classList.remove("say"));
+    speak(W.toLowerCase()+"!", {rate:0.7});
+    sfx.chord();
+  }, W.length*step+150);
+  setTimeout(cb, W.length*step+950);
+}
+
+// ---------- LÆRINGSSYSTEM ----------
+function statFor(w){ return SAVE.wordStats[w] || (SAVE.wordStats[w]={sett:0, feil:0, klart:0}); }
+function letterMiss(L){ SAVE.letterStats[L]=(SAVE.letterStats[L]||0)+1; }
+function practicePool(){
+  return Object.entries(SAVE.wordStats).filter(([,s])=>s.feil>s.klart).map(([w])=>w);
+}
+function findWordEntry(w){
+  for(const L in WORDS){ const hit=WORDS[L].find(x=>x[0]===w); if(hit) return {w:hit[0], e:hit[1]}; }
+  return null;
+}
+// Adaptiv vanskelighet: rullende førsteforsøk-rate styrer ordlengde
+function noteFirstTry(ok){
+  SAVE.recent.push(ok?1:0);
+  if(SAVE.recent.length>10) SAVE.recent.shift();
+}
+function difficultyShift(){
+  if(SAVE.recent.length<5) return 0;
+  const rate=SAVE.recent.reduce((a,b)=>a+b,0)/SAVE.recent.length;
+  if(rate>0.8) return 1;   // hun mestrer – litt lengre ord
+  if(rate<0.4) return -1;  // strever – litt kortere ord
+  return 0;
+}
+
+// ---------- HJELPERE ----------
+const $=id=>document.getElementById(id);
+const shuffle=a=>{a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a;};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); $(id).classList.add("active"); }
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2400); }
+function confetti(n=30, extra=false){
+  const set = extra ? ["🌟","✨","💖","🎉","🦄","🌈","⭐"] : ["🎉","⭐","💛","💙","🩷","✨"];
+  for(let i=0;i<n;i++){
+    const d=document.createElement("div"); d.className="conf"; d.textContent=pick(set);
+    d.style.left=Math.random()*100+"vw";
+    d.style.animationDuration=(1.4+Math.random()*1.6)+"s";
+    d.style.fontSize=(16+Math.random()*20)+"px";
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),3200);
+  }
+}
+function flyStar(fromEl, emoji="✨", target){
+  const jar=target||$("star-count"); if(!fromEl||!jar) return;
+  const a=fromEl.getBoundingClientRect(), b=jar.getBoundingClientRect();
+  const s=document.createElement("div"); s.className="fly-star"; s.textContent=emoji;
+  s.style.left=a.left+a.width/2+"px"; s.style.top=a.top+"px";
+  document.body.appendChild(s);
+  requestAnimationFrame(()=>{ s.style.left=b.left+"px"; s.style.top=b.top+"px"; s.style.transform="scale(.4)"; s.style.opacity=".3"; });
+  setTimeout(()=>s.remove(),850);
+}
+
+// ---------- ANTI-FRUSTRASJON: hint ved stillhet ----------
+let idleTimer=null, hintCount=0;
+function resetIdle(){
+  clearTimeout(idleTimer);
+  if(!run || !$("scr-game").classList.contains("active") || !currentWord) return;
+  if(hintCount>=2) return;
+  idleTimer=setTimeout(()=>{
+    hintCount++;
+    const be=$("big-emoji");
+    be.classList.remove("wave"); void be.offsetWidth; be.classList.add("wave");
+    const first=currentWord.w[0];
+    speak("Psst... ordet begynner med "+(LYD[first]||first.toLowerCase()), {rate:0.7, pitch:1.05});
+    resetIdle();
+  }, 12000);
+}
+document.addEventListener("pointerdown", ()=>resetIdle());
+
+// ---------- ROGUELIKE-RUN ----------
+const ROOMS = 6;
+const CHEST_AFTER = [2,4,6];
+let run=null;
+
+const CHEER = ["SUPERT! 🌟","WOW! 🎉","DU KLARTE DET! 💪","FANTASTISK! 🦄","JIPPI! 🎈","KJEMPEBRA! 🌈","PERFEKT! ⭐"];
+const TRY_AGAIN = [
+  "Nesten! Feil er bare neste steg! ✨",
+  "Bra forsøkt! Du lærer! +1 ✨",
+  "Prøv igjen – du blir sterkere! ✨",
+  "Oi! Hjernen din vokser nå! 🧠✨",
+  "Ikke gi opp – stjernestøv til deg! ✨"
+];
+const LESSONS = [
+  "Visste du? Hver gang du prøver på nytt, blir hjernen din litt sterkere! 🧠💪",
+  "Stjernestøvet ditt kom fra tingene du øvde på – feil er skatter! ✨",
+  "De beste leserne i verden gjorde mange feil først. Akkurat som deg! 🌟",
+  "Å prøve igjen er en superkraft! 🦸‍♀️"
+];
+
+function startRun(){
+  ac() && AC.resume && AC.resume();
+  run = { room:0, streak:0, stars:0, solved:0, tries:0, usedWords:new Set(),
+          bonusGiven:false, boss:null, bossHP:0, inBoss:false, levelUps:0, coinsWon:0, xpWon:0 };
+  document.body.classList.remove("boss-mode");
+  $("boss-bar").classList.remove("on");
+  show("scr-game");
+  nextRoom();
+}
+function renderPath(){
+  const p=$("path"); p.innerHTML="";
+  for(let i=1;i<=ROOMS;i++){
+    const d=document.createElement("div");
+    d.className="dot"+(CHEST_AFTER.includes(i)?" chest-dot":"");
+    if(i<run.room || (i===run.room&&run.inBoss)) d.classList.add("done");
+    if(i===run.room && !run.inBoss) d.classList.add("now");
+    if(CHEST_AFTER.includes(i)) d.textContent = i<run.room ? "✓" : "🎁";
+    p.appendChild(d);
+  }
+  const b=document.createElement("div");
+  b.className="dot"+(run.inBoss?" now":"");
+  b.textContent="👾"; b.style.fontSize="13px";
+  p.appendChild(b);
+}
+function updateHUD(){
+  $("star-count").textContent=run.stars;
+  $("streak-count").textContent=run.streak;
+  renderPath();
+}
+
+function wordForRoom(r){
+  const pool=practicePool().filter(w=>!run.usedWords.has(w));
+  if(pool.length && Math.random()<0.35){
+    const w=pick(pool); run.usedWords.add(w);
+    const entry=findWordEntry(w); if(entry) return entry;
+  }
+  let lens;
+  if(r<=2) lens=[2,3];
+  else if(r<=4) lens=[3,4];
+  else lens=[4,5];
+  const shift=difficultyShift();
+  lens=lens.map(L=>Math.max(2,Math.min(5,L+shift)));
+  for(let t=0;t<30;t++){
+    const L=pick(lens), w=pick(WORDS[L]);
+    if(!run.usedWords.has(w[0])){ run.usedWords.add(w[0]); return {w:w[0], e:w[1]}; }
+  }
+  const L=pick(lens), w=pick(WORDS[L]); return {w:w[0], e:w[1]};
+}
+
+function nextRoom(){
+  run.room++;
+  if(run.room>ROOMS){ startBoss(); return; }
+  currentWord = wordForRoom(run.room);
+  currentWord.firstTry = true;
+  statFor(currentWord.w).sett++;
+  updateHUD();
+  let mode;
+  if(run.room<=1) mode="velg";
+  else if(run.room<=3) mode=pick(["mangler","stav"]);
+  else mode=pick(["stav","stav","lytt"]);
+  currentWord.mode=mode;
+  setupRoomUI(mode);
+  setTimeout(()=>speakWord(),400);
+}
+function setupRoomUI(mode){
+  hintCount=0;
+  $("big-emoji").textContent = mode==="lytt" ? "❓" : currentWord.e;
+  $("big-emoji").style.animation="none"; void $("big-emoji").offsetWidth; $("big-emoji").style.animation="";
+  $("feedback").textContent="";
+  buildChallenge(mode);
+  resetIdle();
+}
+
+// ---------- OPPGAVETYPER ----------
+// Minimale par for "velg": ord som ligner (HUS/MUS) trener fonembevissthet
+function similarWords(W){
+  const all=Object.values(WORDS).flat().map(x=>x[0]).filter(x=>x!==W);
+  const scored=all.map(w=>{
+    let score=0;
+    if(w.length===W.length){
+      score+=3;
+      let diff=0;
+      for(let i=0;i<w.length;i++) if(w[i]!==W[i]) diff++;
+      if(diff===1) score+=6;          // minimalt par! (HUS↔MUS)
+      if(w[0]===W[0]) score+=2;
+    } else if(Math.abs(w.length-W.length)===1){
+      score+=1;
+      if(w[0]===W[0]) score+=2;
+    }
+    return [w,score+Math.random()];
+  }).sort((a,b)=>b[1]-a[1]);
+  return [scored[0][0], scored[1][0]];
+}
+
+function buildChallenge(mode){
+  const slots=$("slots"), tiles=$("tiles");
+  slots.innerHTML=""; tiles.innerHTML="";
+  const W=currentWord.w;
+
+  if(mode==="velg"){
+    $("instruction").textContent="Hvilket ord er riktig? 🤔";
+    slots.style.display="none";
+    const others=similarWords(W);
+    shuffle([W,...others]).forEach(word=>{
+      const b=document.createElement("button"); b.className="wordbtn"; b.textContent=word;
+      b.onclick=()=>{ resetIdle(); sfx.pop(); word===W ? solveWord() : miss(b, W[0]); };
+      tiles.appendChild(b);
+    });
+    return;
+  }
+
+  slots.style.display="flex";
+  const letters=W.split("");
+  if(mode==="mangler"){
+    $("instruction").textContent="Hvilken bokstav mangler? 🔍";
+    const hideIdx=Math.floor(Math.random()*letters.length);
+    letters.forEach((L,i)=>{
+      const s=document.createElement("div"); s.className="slot";
+      if(i!==hideIdx){ s.classList.add("filled","locked"); s.textContent=L; }
+      else s.dataset.want=L;
+      slots.appendChild(s);
+    });
+    const want=letters[hideIdx];
+    const d1=smartDecoy(want, W.split("")), d2=smartDecoy(want, W.split("").concat([d1]));
+    shuffle([want,d1,d2]).forEach(L=>{
+      const b=document.createElement("button"); b.className="tile"; b.textContent=L;
+      b.onclick=()=>{
+        resetIdle(); sfx.pop();
+        if(L===want){
+          const s=slots.querySelector("[data-want]"); s.textContent=L; s.classList.add("filled");
+          b.classList.add("used"); solveWord();
+        } else miss(b, want);
+      };
+      tiles.appendChild(b);
+    });
+    return;
+  }
+
+  // stav / lytt
+  $("instruction").textContent = mode==="lytt" ? "Lytt 🔊 og stav ordet!" : "Stav ordet! ✏️";
+  letters.forEach(()=>{ const s=document.createElement("div"); s.className="slot"; slots.appendChild(s); });
+  let pool=[...letters];
+  if(W.length>=4) pool.push(smartDecoy(pick(letters), letters)); // smart lurebokstav
+  let idx=0;
+  const shuffled=shuffle(pool);
+  // ✨ Gyllen bokstav (8 %): en riktig bokstav skinner – gir mynter!
+  let goldLetter=null;
+  if(Math.random()<0.08){
+    const cands=shuffled.filter(L=>letters.includes(L));
+    if(cands.length) goldLetter=pick(cands);
+  }
+  let goldUsed=false;
+  shuffled.forEach(L=>{
+    const b=document.createElement("button"); b.className="tile"; b.textContent=L;
+    if(L===goldLetter && !goldUsed){ b.classList.add("gull"); goldUsed=true; b.dataset.gull="1"; }
+    b.onclick=()=>{
+      resetIdle();
+      if(b.classList.contains("used")) return;
+      if(L===letters[idx]){
+        sfx.ladder(idx); // 🎵 stigende tone per bokstav
+        const s=slots.children[idx]; s.textContent=L; s.classList.add("filled");
+        if(b.dataset.gull){
+          SAVE.coins+=2; run.coinsWon+=2;
+          sfx.coin(); flyStar(b,"🪙");
+          toast("✨ Gyllen bokstav! +2 🪙");
+        }
+        b.classList.add("used"); idx++;
+        if(idx===letters.length) solveWord();
+      } else miss(b, letters[idx]);
+    };
+    tiles.appendChild(b);
+  });
+}
+
+// ---------- RIKTIG / FEIL ----------
+function miss(el, expected){
+  run.tries++;
+  currentWord.firstTry=false;
+  statFor(currentWord.w).feil++;
+  if(expected) letterMiss(expected);
+  run.streak=0; updateHUD();
+  sfx.wrong();
+  el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+  run.stars++; SAVE.totalStars++;
+  sfx.star(); flyStar(el);
+  const fb=$("feedback"); fb.className="fb-try"; fb.textContent=pick(TRY_AGAIN);
+  if(run.tries%3===0) speak("Prøv igjen, "+SAVE.name+"! Du klarer det!", {rate:0.9});
+  else setTimeout(()=>speakWord(), 500);
+  updateHUD();
+  resetIdle();
+}
+
+function solveWord(){
+  clearTimeout(idleTimer);
+  run.solved++; SAVE.wordsSolved++;
+  statFor(currentWord.w).klart++;
+  noteFirstTry(currentWord.firstTry);
+  let xp=5;
+  if(currentWord.firstTry){
+    xp+=3;
+    run.streak++;
+    if(run.streak>SAVE.bestStreak) SAVE.bestStreak=run.streak;
+  }
+  run.xpWon+=xp; giveXP(xp);
+  // Lås opp små bokstaver som belønning!
+  if(!SAVE.lowerUnlocked && SAVE.wordsSolved>=30){
+    SAVE.lowerUnlocked=true;
+    toast("🎓 Du har låst opp VOKSEN-bokstavene! (abc) Se innstillinger!");
+    sfx.levelup();
+  }
+  if(currentWord.mode==="lytt") $("big-emoji").textContent=currentWord.e;
+  const heia = pick(CHEER) + (Math.random()<0.5 ? " "+SAVE.name.toUpperCase()+"!" : "");
+  const fb=$("feedback"); fb.className="fb-good"; fb.textContent=heia+" "+currentWord.w+" = "+currentWord.e;
+  sfx.correct();
+  const badge=$("streak-count").parentElement;
+  badge.classList.remove("pump"); void badge.offsetWidth; badge.classList.add("pump");
+  updateHUD();
+  document.querySelectorAll("#tiles button").forEach(b=>b.style.pointerEvents="none");
+
+  if(run.streak>0 && run.streak%3===0){
+    sfx.streak(run.streak);
+    confetti(20+run.streak*6, run.streak>=6);
+    toast("🔥 "+run.streak+" PÅ RAD, "+SAVE.name+"! Du er RÅ!");
+  } else {
+    confetti(currentWord.firstTry?16:8);
+  }
+
+  setTimeout(()=>{
+    spellOutWord(()=>{
+      if(run.inBoss){ bossHit(); return; }
+      if(CHEST_AFTER.includes(run.room)) showChest(false);
+      else if(Math.random()<0.10){ // 🎲 OVERRASKELSESKISTE – variabel belønning!
+        toast("😱 OVERRASKELSE! En hemmelig kiste!");
+        showChest("overraskelse");
+      }
+      else nextRoom();
+    });
+  }, 700);
+}
+
+// ---------- ORD-BOSS ----------
+function startBoss(){
+  run.inBoss=true;
+  const lvl=levelOf(SAVE.xp);
+  run.boss=pick(BOSSES.filter(b=>b.lvl<=lvl));
+  run.bossHP=run.boss.hp;
+  document.body.classList.add("boss-mode");
+  $("boss-bar").classList.add("on");
+  $("boss-emoji").textContent=run.boss.e;
+  $("boss-emoji").classList.remove("dead","hit");
+  $("boss-name").textContent=run.boss.navn;
+  renderBossHP();
+  updateHUD();
+  toast("👾 "+run.boss.navn+" har stjålet ordene!");
+  speak(run.boss.navn+" har stjålet ordene! Stav dem tilbake, "+SAVE.name+"!", {rate:0.95});
+  setTimeout(bossNextWord, 1800);
+}
+function renderBossHP(){
+  $("boss-hp").textContent = "💜".repeat(run.bossHP) + "🤍".repeat(run.boss.hp-run.bossHP);
+}
+function bossNextWord(){
+  let entry=null;
+  const pool=practicePool().filter(w=>!run.usedWords.has(w));
+  if(pool.length && Math.random()<0.6) entry=findWordEntry(pick(pool));
+  if(!entry){
+    const L=pick([4,5]), w=pick(WORDS[L]);
+    entry={w:w[0], e:w[1]};
+  }
+  run.usedWords.add(entry.w);
+  currentWord=entry;
+  currentWord.firstTry=true;
+  currentWord.mode="stav";
+  statFor(currentWord.w).sett++;
+  hintCount=0;
+  $("instruction").textContent="Stav ordet og ta det tilbake! ⚔️";
+  $("big-emoji").textContent=currentWord.e;
+  $("feedback").textContent="";
+  buildChallenge("stav");
+  resetIdle();
+  setTimeout(()=>speakWord(),400);
+}
+function bossHit(){
+  const from=$("slots").getBoundingClientRect(), to=$("boss-emoji").getBoundingClientRect();
+  const p=document.createElement("div"); p.id="proj"; p.textContent="⭐";
+  p.style.left=from.left+from.width/2+"px"; p.style.top=from.top+"px";
+  document.body.appendChild(p);
+  requestAnimationFrame(()=>{ p.style.left=to.left+to.width/2+"px"; p.style.top=to.top+to.height/2+"px"; p.style.transform="scale(1.8) rotate(360deg)"; });
+  setTimeout(()=>{
+    p.remove();
+    run.bossHP--;
+    renderBossHP();
+    sfx.streak(4);
+    const be=$("boss-emoji");
+    be.classList.remove("hit"); void be.offsetWidth; be.classList.add("hit");
+    if(run.bossHP<=0) setTimeout(bossDefeat, 550);
+    else {
+      speak("Au! "+run.boss.navn+" mistet et ord!", {rate:1});
+      setTimeout(bossNextWord, 1400);
+    }
+  }, 520);
+}
+function bossDefeat(){
+  SAVE.bossesBeaten++;
+  run.xpWon+=15; giveXP(15);
+  $("boss-emoji").classList.add("dead");
+  sfx.fanfare();
+  confetti(70,true);
+  toast("🏆 Du beseiret "+run.boss.navn+"!");
+  speak("Hurra! Du beseiret "+run.boss.navn+", "+SAVE.name+"! Du får en superskatt!", {rate:0.95});
+  persist();
+  setTimeout(()=>{
+    document.body.classList.remove("boss-mode");
+    $("boss-bar").classList.remove("on");
+    showChest("boss");
+  }, 1800);
+}
+
+// ---------- KISTER & LOOT ----------
+function rollLoot(kind, boost=0){
+  SAVE.chests++;
+  // Pity-system: garantert legendarisk hver 12. kiste
+  const pity = SAVE.sinceLeg>=11;
+  if(kind==="boss" || pity){
+    const legend = pity || Math.random()<0.3;
+    const items=LOOT.filter(x=> legend ? x.r==="legendarisk" : x.r==="episk");
+    const item=pick(items);
+    if(item.r==="legendarisk") SAVE.sinceLeg=0; else SAVE.sinceLeg++;
+    return item;
+  }
+  let table=[];
+  for(const item of LOOT){
+    let w=RAR_WEIGHT[item.r];
+    if(boost>0){
+      if(item.r==="episk") w+=boost*2;
+      if(item.r==="legendarisk") w+=boost;
+      if(item.r==="vanlig") w=Math.max(15, w-boost*2);
+    }
+    table.push([item,w]);
+  }
+  let sum=table.reduce((a,[,w])=>a+w,0), r=Math.random()*sum;
+  let chosen=LOOT[0];
+  for(const [item,w] of table){ r-=w; if(r<=0){ chosen=item; break; } }
+  if(chosen.r==="legendarisk") SAVE.sinceLeg=0; else SAVE.sinceLeg++;
+  return chosen;
+}
+let chestLoot=null, chestKind=false, chestTaps=0;
+function showChest(kind){
+  chestKind=kind; chestTaps=0;
+  chestLoot=rollLoot(kind, kind==="bonus" ? Math.min(run.stars,10) : 0);
+  show("scr-chest");
+  $("chest-emoji").style.display="block";
+  $("chest-emoji").className="";
+  $("chest-emoji").textContent = kind==="bonus" ? "🌟" : (kind==="boss" ? "🏆" : "🎁");
+  $("chest-cracks").textContent="";
+  $("loot-reveal").className=""; $("loot-reveal").textContent="";
+  $("loot-name").textContent="";
+  $("chest-hint").textContent =
+    kind==="bonus" ? "Stjernestøvet ditt laget en BONUS-skatt! ✨" :
+    kind==="boss"  ? "Boss-skatten, "+SAVE.name+"! 🏆" :
+    kind==="overraskelse" ? "En hemmelig kiste!? 😱" :
+    "En skattekiste!";
+  $("chest-hint").textContent += " Trykk 3 ganger! 👆👆👆";
+  $("chest-next").style.display="none";
+  const g=$("glowring"); g.className="glowring";
+}
+// 3-trykks åpning: forventning > avsløring 🎰
+function tapChest(){
+  if(!chestLoot) return;
+  const c=$("chest-emoji");
+  chestTaps++;
+  if(chestTaps===1){
+    sfx.crack();
+    c.classList.remove("tap1"); void c.offsetWidth; c.classList.add("tap1");
+    $("chest-cracks").textContent="💥";
+    $("chest-hint").textContent="Noe rører seg der inne...! 👆👆";
+  }
+  else if(chestTaps===2){
+    sfx.crack(); tone && sfx.pop();
+    c.classList.remove("tap2"); void c.offsetWidth; c.classList.add("tap2");
+    $("chest-cracks").textContent="💥💥";
+    // Sjeldenhets-gløden avsløres FØR skatten – Hearthstone-trikset!
+    const g=$("glowring"); g.className="glowring on g-"+chestLoot.r;
+    $("chest-hint").textContent =
+      chestLoot.r==="legendarisk" ? "GULL-LYS!? Det kan ikke være sant...! 👆" :
+      chestLoot.r==="episk" ? "LILLA lys!! Noe episk!? 👆" :
+      chestLoot.r==="sjelden" ? "Blått lys... noe sjeldent! 👆" :
+      "Ett trykk til! 👆";
+    if(chestLoot.r==="episk"||chestLoot.r==="legendarisk") sfx.streak(5);
+  }
+  else if(chestTaps===3){
+    openChest();
+  }
+}
+function openChest(){
+  const c=$("chest-emoji");
+  sfx.chest();
+  c.style.display="none";
+  $("chest-cracks").textContent="";
+  const lr=$("loot-reveal");
+  lr.textContent=chestLoot.e; lr.classList.add("show");
+  const ln=$("loot-name");
+  ln.textContent=RAR_NAME[chestLoot.r];
+  ln.className="rar-"+chestLoot.r;
+  const dup=!!SAVE.collection[chestLoot.e];
+  if(dup){
+    SAVE.coins+=2; run && (run.coinsWon+=2);
+    sfx.coin();
+    $("chest-hint").textContent="Du har den fra før → +2 🪙 mynter!";
+  } else {
+    $("chest-hint").textContent="NY i emojiboka di! 📖";
+  }
+  SAVE.collection[chestLoot.e]=(SAVE.collection[chestLoot.e]||0)+1;
+  persist();
+  const big = chestLoot.r==="episk"||chestLoot.r==="legendarisk";
+  confetti(big?60:25, big);
+  if(big) sfx.fanfare();
+  if(chestLoot.r==="legendarisk") speak("Legendarisk! Wow, "+SAVE.name+"!", {rate:0.95});
+  $("chest-next").style.display="inline-block";
+}
+function afterChest(){
+  sfx.pop();
+  if(chestKind==="bonus"){ finishEndScreen(); return; }
+  if(chestKind==="boss"){ endRun(); return; }
+  show("scr-game");
+  nextRoom();
+}
+
+// ---------- SLUTT ----------
+function endRun(){
+  SAVE.runs++;
+  persist();
+  if(run.stars>=3 && !run.bonusGiven){
+    run.bonusGiven=true;
+    toast("✨ Stjernestøvet ditt ble til en ekstra skatt!");
+    setTimeout(()=>showChest("bonus"), 900);
+    return;
+  }
+  finishEndScreen();
+}
+function finishEndScreen(){
+  show("scr-end");
+  sfx.fanfare();
+  confetti(50,true);
+  const lvl=levelOf(SAVE.xp);
+  const banner=$("levelup-banner");
+  if(run.levelUps>0){
+    banner.style.display="block";
+    const perks=levelPerks(lvl);
+    banner.textContent="🎓 NIVÅ OPP! Du er nå nivå "+lvl+"!"+(perks.length?" 🔓 "+perks.join(" • "):"");
+    sfx.levelup();
+    speak("Nivå opp! Du er nå nivå "+lvl+", "+SAVE.name+"!", {rate:0.95});
+  } else {
+    banner.style.display="none";
+    speak("Bra jobba, "+SAVE.name+"! Du leste "+run.solved+" ord!", {rate:0.9});
+  }
+  $("end-title").textContent="🎉 FOR EN REISE, "+SAVE.name.toUpperCase()+"!";
+  $("end-stats").innerHTML =
+    "📚 Ord du leste: <b>"+run.solved+"</b> (+"+run.xpWon+" XP)<br>"+
+    (run.boss && run.bossHP<=0 ? "👾 "+run.boss.navn+": <b>BESEIRET!</b> 🏆<br>" : "")+
+    (run.coinsWon>0 ? "🪙 Mynter: <b>+"+run.coinsWon+"</b><br>" : "")+
+    "🔥 Beste rekke: <b>"+SAVE.bestStreak+"</b><br>"+
+    "✨ Stjernestøv: <b>"+run.stars+"</b>"+(run.bonusGiven?" → 🎁 bonusskatt!":"");
+  $("end-lesson").textContent=pick(LESSONS);
+  persist();
+}
+
+// ---------- EMOJIBOK + SETT ----------
+function showBook(){
+  show("scr-book");
+  $("coin-count").textContent=SAVE.coins;
+  // Samle-sett
+  const sw=$("sets-wrap"); sw.innerHTML="";
+  SETS.forEach((set,si)=>{
+    const have=set.emojis.filter(e=>SAVE.collection[e]).length;
+    const card=document.createElement("div"); card.className="set-card";
+    const claimed=SAVE.setsClaimed[si];
+    card.innerHTML =
+      '<div class="set-head"><span>'+set.navn+'</span><span>'+have+'/'+set.emojis.length+'</span></div>'+
+      '<div class="set-emojis">'+set.emojis.map(e=>SAVE.collection[e]?e:'<span class="miss">'+e+'</span>').join("")+'</div>'+
+      '<div class="set-meter"><div class="set-fill" style="width:'+(have/set.emojis.length*100)+'%"></div></div>';
+    if(have===set.emojis.length && !claimed){
+      const btn=document.createElement("button");
+      btn.className="smallbtn set-claim"; btn.textContent="🏅 HENT PREMIE! +"+set.premie+" 🪙";
+      btn.onclick=()=>{
+        SAVE.setsClaimed[si]=true;
+        SAVE.coins+=set.premie;
+        sfx.fanfare(); confetti(60,true);
+        toast("🏅 "+set.navn+" fullført! +"+set.premie+" 🪙");
+        speak("Du fullførte hele settet, "+SAVE.name+"! Mester!", {rate:0.95});
+        persist(); showBook();
+      };
+      card.appendChild(btn);
+    } else if(claimed){
+      const d=document.createElement("div"); d.className="set-done"; d.textContent="🏅 Mester!";
+      card.appendChild(d);
+    }
+    sw.appendChild(card);
+  });
+  // Rutenett
+  const g=$("book-grid"); g.innerHTML="";
+  let owned=0;
+  const order=["legendarisk","episk","sjelden","vanlig"];
+  [...LOOT].sort((a,b)=>order.indexOf(a.r)-order.indexOf(b.r)).forEach(item=>{
+    const c=document.createElement("div");
+    const n=SAVE.collection[item.e]||0;
+    c.className="book-cell"+(n? " rar-"+item.r : " locked");
+    c.textContent = n ? item.e : "❓";
+    if(n>1){ const s=document.createElement("div"); s.className="cnt"; s.textContent="×"+n; c.appendChild(s); }
+    if(n){ owned++; c.onclick=()=>{ sfx.pop(); toast(item.e+" "+RAR_NAME[item.r]); }; }
+    g.appendChild(c);
+  });
+  $("book-progress").textContent = owned+" / "+LOOT.length;
+}
+
+// ---------- BUTIKK: bruk mynter, VELG en skatt (valgfrihet = belønning) ----------
+function openShop(){
+  $("shop-coins").textContent=SAVE.coins;
+  const g=$("shop-grid"); g.innerHTML="";
+  const locked=LOOT.filter(x=>!SAVE.collection[x.e]);
+  if(!locked.length){ g.innerHTML="<div style='grid-column:1/-1;font-weight:700'>Du har ALT! 🤩</div>"; }
+  locked.forEach(item=>{
+    const cost=SHOP_COST[item.r];
+    const b=document.createElement("button"); b.className="shop-cell";
+    b.innerHTML=item.e+"<small>"+cost+" 🪙</small>";
+    b.disabled = SAVE.coins<cost;
+    b.onclick=()=>{
+      SAVE.coins-=cost;
+      SAVE.collection[item.e]=1;
+      sfx.fanfare(); confetti(40, item.r==="episk"||item.r==="legendarisk");
+      toast("Du valgte "+item.e+"! "+RAR_NAME[item.r]);
+      persist();
+      $("shop-ovl").classList.remove("on");
+      showBook();
+    };
+    g.appendChild(b);
+  });
+  $("shop-ovl").classList.add("on");
+}
+
+// ---------- HJEM & INNSTILLINGER ----------
+function goHome(){ show("scr-start"); renderStartStats(); }
+function renderStartStats(){
+  const owned=Object.keys(SAVE.collection).length;
+  const lvl=levelOf(SAVE.xp);
+  $("greeting").textContent="Hei, "+SAVE.name+"! 👋";
+  const prev = lvl>1 ? xpNeed(lvl-1) : 0;
+  const pct = Math.min(100, (SAVE.xp-prev)/(xpNeed(lvl)-prev)*100);
+  $("xp-label").textContent="🎓 Lesenivå "+lvl;
+  $("xp-fill").style.width=pct+"%";
+  $("start-stats").innerHTML =
+    '<div class="pill">📖 '+owned+'/'+LOOT.length+'</div>'+
+    '<div class="pill">🔥 '+SAVE.bestStreak+'</div>'+
+    '<div class="pill">📚 '+SAVE.wordsSolved+'</div>'+
+    '<div class="pill">👾 '+(SAVE.bossesBeaten||0)+'</div>'+
+    '<div class="pill">🪙 '+SAVE.coins+'</div>';
+}
+function applyTheme(){
+  document.body.classList.remove("theme-regnbue","theme-natt","theme-godteri");
+  if(SAVE.theme!=="standard") document.body.classList.add("theme-"+SAVE.theme);
+}
+function applyLower(){
+  document.body.classList.toggle("lower", SAVE.lowerUnlocked && SAVE.lowerOn);
+}
+function toggleLower(on){ SAVE.lowerOn=on; applyLower(); persist(); }
+function openSettings(){
+  $("name-input").value=SAVE.name;
+  $("lower-row").style.display = SAVE.lowerUnlocked ? "flex" : "none";
+  $("lower-toggle").checked=SAVE.lowerOn;
+  const lvl=levelOf(SAVE.xp);
+  const tr=$("theme-row"); tr.innerHTML="";
+  THEMES.forEach(t=>{
+    const b=document.createElement("button"); b.className="theme-chip"+(SAVE.theme===t.id?" sel":"");
+    b.textContent = lvl>=t.lvl ? t.navn : "🔒 Nivå "+t.lvl;
+    b.disabled = lvl<t.lvl;
+    b.onclick=()=>{ SAVE.theme=t.id; applyTheme(); persist(); openSettings(); sfx.pop(); };
+    tr.appendChild(b);
+  });
+  $("settings-ovl").classList.add("on");
+}
+function testVoice(){
+  ac() && AC.resume && AC.resume();
+  const n=$("name-input").value.trim()||"Sofia";
+  speak("Hei "+n+"! Skal vi lese ord sammen?", {rate:0.9});
+}
+function saveSettings(){
+  const n=$("name-input").value.trim();
+  if(n) SAVE.name=n.charAt(0).toUpperCase()+n.slice(1);
+  persist();
+  $("settings-ovl").classList.remove("on");
+  renderStartStats();
+  toast("Hei, "+SAVE.name+"! 👋");
+  sfx.correct();
+}
+// 📊 Foreldrevisning: hva strever hun med?
+function openStats(){
+  const trouble=Object.entries(SAVE.wordStats)
+    .filter(([,s])=>s.feil>0)
+    .sort((a,b)=>(b[1].feil-b[1].klart)-(a[1].feil-a[1].klart))
+    .slice(0,8);
+  const letters=Object.entries(SAVE.letterStats)
+    .sort((a,b)=>b[1]-a[1]).slice(0,6);
+  let html="<b>Nivå "+levelOf(SAVE.xp)+"</b> · "+SAVE.xp+" XP · "+SAVE.wordsSolved+" ord løst · "+SAVE.runs+" reiser<br><br>";
+  html+="<b>🔎 Ord som trenger øving:</b><br>";
+  html+= trouble.length
+    ? trouble.map(([w,s])=>w+" — "+s.feil+" feil / "+s.klart+" riktig").join("<br>")
+    : "Ingen ennå – bra tegn! 🌟";
+  html+="<br><br><b>🔤 Bokstaver med flest bom:</b><br>";
+  html+= letters.length ? letters.map(([L,n])=>L+" ("+n+")").join(" · ") : "Ingen data ennå.";
+  html+="<br><br><i>Ord med flere feil enn riktige kommer automatisk oftere tilbake i spillet og hos bossene.</i>";
+  $("stats-list").innerHTML=html;
+  $("stats-ovl").classList.add("on");
+}
+$("settings-ovl").addEventListener("click", e=>{ if(e.target.id==="settings-ovl") e.target.classList.remove("on"); });
+$("shop-ovl").addEventListener("click", e=>{ if(e.target.id==="shop-ovl") e.target.classList.remove("on"); });
+$("stats-ovl").addEventListener("click", e=>{ if(e.target.id==="stats-ovl") e.target.classList.remove("on"); });
+
+// Trykk på fylt bokstavrute → hør bokstavLYDEN (lydmetoden)
+$("slots").addEventListener("click", e=>{
+  const s=e.target.closest(".slot");
+  if(s && s.classList.contains("filled") && s.textContent){
+    speakSound(s.textContent.toUpperCase());
+    s.classList.add("say"); setTimeout(()=>s.classList.remove("say"), 450);
+  }
+});
+
+// ---------- iPAD / TOUCH ----------
+// Blokker pinch-zoom og pull-to-refresh (scrolling tillates kun i scrollområder)
+document.addEventListener("touchmove", e=>{
+  if(!e.target.closest("#book-scroll, #shop-grid, #stats-list, .ovl-box")) e.preventDefault();
+}, {passive:false});
+document.addEventListener("gesturestart", e=>e.preventDefault());
+// (Dobbelttrykk-zoom er allerede slått av via touch-action:manipulation,
+//  slik at raske trykk på fliser og kisten fungerer uten forsinkelse.)
+// iOS krever brukerberøring før lyd + tale: vekk begge ved første trykk
+let primed=false;
+document.addEventListener("pointerdown", ()=>{
+  if(primed) return; primed=true;
+  const c=ac(); c && c.resume && c.resume();
+  if(window.speechSynthesis){
+    try{ const u=new SpeechSynthesisUtterance(" "); u.volume=0; speechSynthesis.speak(u); }catch(e){}
+  }
+}, {once:false});
+// Fullskjerm (Safari på iPad støtter dette; ellers vis tips om Hjem-skjerm)
+function toggleFullscreen(){
+  sfx.pop();
+  const d=document.documentElement;
+  const fsEl=document.fullscreenElement||document.webkitFullscreenElement;
+  if(fsEl){
+    (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+  } else if(d.requestFullscreen){ d.requestFullscreen().catch(()=>fsTip()); }
+  else if(d.webkitRequestFullscreen){ try{ d.webkitRequestFullscreen(); }catch(e){ fsTip(); } }
+  else fsTip();
+}
+function fsTip(){
+  toast("💡 Trykk Del-knappen i Safari → «Legg til på Hjem-skjerm» for ekte fullskjerm!");
+}
+function updateFsBtn(){
+  const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+  const fsEl=document.fullscreenElement||document.webkitFullscreenElement;
+  $("fs-btn").style.display = standalone ? "none" : "block"; // allerede fullskjerm-app
+  $("fs-btn").textContent = fsEl ? "🡼" : "⛶";
+}
+document.addEventListener("fullscreenchange", updateFsBtn);
+document.addEventListener("webkitfullscreenchange", updateFsBtn);
+updateFsBtn();
+
+loadSave();
+</script>
+</body>
+</html>
