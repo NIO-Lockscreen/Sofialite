@@ -857,19 +857,24 @@ function updateHUD(){
   renderPath();
 }
 
-function wordForRoom(r){
-  const pool=practicePool().filter(w=>!run.usedWords.has(w));
+function wordForRoom(r, mode="stav"){
+  // Root fix: choose-word rooms need real, visually distinct words.
+  // The earlier flow picked the word BEFORE picking the room type, so room 1 could become
+  // 🐝 with BI / TE / IS. That looked like the game was only giving word fragments.
+  const minLen = mode==="velg" ? 3 : 2;
+  const pool=practicePool().filter(w=>!run.usedWords.has(w) && w.length>=minLen);
   if(pool.length && Math.random()<0.35){
     const w=pick(pool); run.usedWords.add(w);
     const entry=findWordEntry(w); if(entry) return entry;
   }
   let lens;
-  if(r<=2) lens=[2,3];
+  if(mode==="velg") lens=[3,4];
+  else if(r<=2) lens=[2,3];
   else if(r<=4) lens=[3,4];
   else lens=[4,5];
   const shift=difficultyShift();
-  lens=lens.map(L=>Math.max(2,Math.min(5,L+shift)));
-  for(let t=0;t<30;t++){
+  lens=[...new Set(lens.map(L=>Math.max(minLen,Math.min(5,L+shift))))].filter(L=>WORDS[L] && WORDS[L].length);
+  for(let t=0;t<40;t++){
     const L=pick(lens), w=pick(WORDS[L]);
     if(!run.usedWords.has(w[0])){ run.usedWords.add(w[0]); return {w:w[0], e:w[1]}; }
   }
@@ -880,14 +885,14 @@ function nextRoom(){
   clearTTS(true);
   run.room++;
   if(run.room>ROOMS){ startBoss(); return; }
-  currentWord = wordForRoom(run.room);
-  currentWord.firstTry = true;
-  statFor(currentWord.w).sett++;
-  updateHUD();
   let mode;
   if(run.room<=1) mode="velg";
   else if(run.room<=3) mode=pick(["mangler","stav"]);
   else mode=pick(["stav","stav","lytt"]);
+  currentWord = wordForRoom(run.room, mode);
+  currentWord.firstTry = true;
+  statFor(currentWord.w).sett++;
+  updateHUD();
   currentWord.mode=mode;
   setupRoomUI(mode);
   scheduleTTS(TTS_SEQ, ()=>speakWord(), 400);
@@ -904,7 +909,10 @@ function setupRoomUI(mode){
 // ---------- OPPGAVETYPER ----------
 // Minimale par for "velg": ord som ligner (HUS/MUS) trener fonembevissthet
 function similarWords(W){
-  const all=Object.values(WORDS).flat().map(x=>x[0]).filter(x=>x!==W);
+  // In picture-to-word mode we avoid 2-letter words entirely.
+  // Options should feel like whole words, not clipped fragments.
+  const minLen=3;
+  const all=Object.values(WORDS).flat().map(x=>x[0]).filter(x=>x!==W && x.length>=minLen);
   const scored=all.map(w=>{
     let score=0;
     if(w.length===W.length){
@@ -930,8 +938,8 @@ function buildChallenge(mode){
   if(mode==="velg"){
     $("instruction").textContent="Hvilket ord er riktig? 🤔";
     slots.style.display="none";
-    const others=similarWords(W);
-    shuffle([W,...others]).forEach(word=>{
+    const choices=[W,...similarWords(W)].filter(word=>word.length>=3);
+    shuffle(choices).forEach(word=>{
       const b=document.createElement("button"); b.className="wordbtn"; b.textContent=word;
       b.onclick=()=>{ resetIdle(); sfx.pop(); word===W ? solveWord() : miss(b, W[0]); };
       tiles.appendChild(b);
