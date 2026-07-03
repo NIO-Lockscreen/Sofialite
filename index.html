@@ -261,6 +261,11 @@
   .roundbtn,.dot,#big-emoji,#boss-emoji,#chest-emoji,#loot-reveal,.book-cell,.shop-cell{
     display:flex; align-items:center; justify-content:center;
   }
+  /* Bokstav midt i ruta: Fredoka har skjeve vertikalmetrikker, så uten
+     line-height:1 + flex-sentrering ligger bokstaven for lavt (slot) /
+     for høyt (flis) – mest synlig på iPad der fonten faktisk lastes. */
+  .tile,.slot{line-height:1; padding:0;}
+  .tile{display:flex; align-items:center; justify-content:center;}
   .bigbtn,.smallbtn{display:inline-flex; align-items:center; justify-content:center; gap:.35em;}
   .smallbtn.danger{background:#ff5c6c; box-shadow:0 4px 0 #c73848;}
   .smallbtn.danger:active{box-shadow:0 1px 0 #c73848;}
@@ -383,6 +388,10 @@
   <div class="startstats" id="start-stats"></div>
   <button class="bigbtn" onclick="startRun()">🚀 START REISEN</button>
   <button class="bigbtn drue" onclick="showBook()">📖 EMOJIBOKA MI</button>
+  <div class="toggle-row" style="width:min(80vw,290px); font-size:16px">
+    <span>🗺️ Veivalg på reisen</span>
+    <input type="checkbox" id="veivalg-toggle" checked onchange="toggleVeivalg(this.checked)">
+  </div>
 </div>
 
 <!-- INNSTILLINGER -->
@@ -580,7 +589,7 @@ const THEMES = [
 function freshSave(){
   return {name:"Sofia", collection:{}, coins:0, totalStars:0, bestStreak:0, runs:0, wordsSolved:0,
     bossesBeaten:0, wordStats:{}, letterStats:{}, xp:0, chests:0, sinceLeg:0, recent:[],
-    lowerUnlocked:false, lowerOn:false, theme:"standard", setsClaimed:{}, comebackHeart:false};
+    lowerUnlocked:false, lowerOn:false, theme:"standard", setsClaimed:{}, comebackHeart:false, veivalg:true};
 }
 let SAVE = freshSave();
 async function loadSave(){
@@ -1450,7 +1459,7 @@ function afterChest(){
   sfx.pop();
   if(chestKind==="bonus"){ finishEndScreen(); return; }
   if(chestKind==="boss"){ endRun(); return; }
-  if(chestKind!=="overraskelse" && (run.room===2 || run.room===4)){ offerPath(); return; } // 🗺️ veivalg
+  if(SAVE.veivalg!==false && chestKind!=="overraskelse" && (run.room===2 || run.room===4)){ offerPath(); return; } // 🗺️ veivalg
   show("scr-game");
   nextRoom();
 }
@@ -1606,6 +1615,7 @@ function renderStartStats(){
   const owned=Object.keys(SAVE.collection).length;
   const lvl=levelOf(SAVE.xp);
   $("greeting").textContent="Hei, "+SAVE.name+"! 👋";
+  $("veivalg-toggle").checked = SAVE.veivalg!==false;
   const prev = lvl>1 ? xpNeed(lvl-1) : 0;
   const pct = Math.min(100, (SAVE.xp-prev)/(xpNeed(lvl)-prev)*100);
   $("xp-label").textContent="🎓 Lesenivå "+lvl;
@@ -1625,6 +1635,10 @@ function applyLower(){
   document.body.classList.toggle("lower", SAVE.lowerUnlocked && SAVE.lowerOn);
 }
 function toggleLower(on){ SAVE.lowerOn=on; applyLower(); persist(); }
+function toggleVeivalg(on){
+  SAVE.veivalg=on; persist(); sfx.pop();
+  toast(on ? "🗺️ Veivalg PÅ – du velger sti underveis!" : "🌸 Veivalg AV – reisen går rett fram.");
+}
 function openSettings(){
   $("name-input").value=SAVE.name;
   $("lower-row").style.display = SAVE.lowerUnlocked ? "flex" : "none";
