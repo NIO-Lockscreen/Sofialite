@@ -533,9 +533,12 @@ const WORDS = {
 };
 const ALL_LETTERS = "ABDEFGHIJKLMNOPRSTUVYÆØÅ".split("");
 
-// Lydmetoden: bokstavLYDER (ikke navn) – slik norske skoler lærer avkoding
-const LYD = {A:"a",B:"b",D:"d",E:"e",F:"fff",G:"g",H:"h",I:"i",J:"jjj",K:"k",L:"lll",M:"mmm",
-  N:"nnn",O:"o",P:"p",R:"rrr",S:"sss",T:"t",U:"u",V:"vvv",Y:"y",Æ:"æ",Ø:"ø",Å:"å"};
+// Bokstavlyd for uglehjelpen. KUN én bokstav per verdi: strukne stavinger
+// som "lll" og "vvv" ble STAVET av stemmen ("L-L-L", "V-V-V") i stedet for
+// å bli sagt som en lyd – samme feilklasse som den purgede uttale-ordboken.
+// Web Speech har ingen pålitelig fonem-styring, så bokstavnavn er tryggest.
+const LYD = {A:"a",B:"b",D:"d",E:"e",F:"f",G:"g",H:"h",I:"i",J:"j",K:"k",L:"l",M:"m",
+  N:"n",O:"o",P:"p",R:"r",S:"s",T:"t",U:"u",V:"v",Y:"y",Æ:"æ",Ø:"ø",Å:"å"};
 
 // Bokstaver barn ofte blander – brukes som smarte lurebokstaver
 const FORVEKSLING = {B:["D","P"],D:["B","T"],P:["B"],T:["D"],M:["N"],N:["M"],E:["Æ","I"],Æ:["E","Å"],
@@ -844,6 +847,16 @@ function flyStar(fromEl, emoji="✨", target){
 
 // ---------- ANTI-FRUSTRASJON: hint ved stillhet ----------
 let idleTimer=null, hintCount=0;
+// Bokstaven barnet faktisk trenger nå – ikke alltid den første. I
+// "mangler"-modus står den i data-want på den tomme ruten; i stav/lytt er
+// det bokstaven for første ufylte rute. Uten ruter (velg-modus): forbokstav.
+function nextNeededLetter(){
+  if(!currentWord) return null;
+  const slots=[...document.querySelectorAll("#slots .slot")];
+  const i=slots.findIndex(s=>!s.classList.contains("filled"));
+  if(i<0) return currentWord.w[0];
+  return slots[i].dataset.want || currentWord.w[i];
+}
 function resetIdle(){
   clearTimeout(idleTimer);
   if(!run || !$("scr-game").classList.contains("active") || !currentWord) return;
@@ -852,9 +865,9 @@ function resetIdle(){
     hintCount++;
     const be=$("big-emoji");
     be.classList.remove("wave"); void be.offsetWidth; be.classList.add("wave");
-    const first=currentWord.w[0];
+    const L=nextNeededLetter() || currentWord.w[0];
     clearTTS(true);
-    speak("Psst... se etter bokstaven "+first, {rate:0.7, pitch:1.05});
+    speak("Psst... se etter bokstaven "+L.toLowerCase(), {rate:0.7, pitch:1.05});
     resetIdle();
   }, 12000);
 }
