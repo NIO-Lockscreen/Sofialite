@@ -224,6 +224,70 @@
     transition:transform .35s cubic-bezier(.2,1.4,.4,1); text-align:center; max-width:88vw;}
   #toast.show{transform:translateX(-50%) translateY(0);}
 
+
+
+  /* ---------- POLISH: icon alignment + livligere gameplay ---------- */
+  .pill,.roundbtn,.bigbtn,.smallbtn,.dot,.book-cell,.shop-cell,#logo-emoji,#big-emoji,#boss-emoji,#chest-emoji,#loot-reveal{
+    line-height:1; text-align:center; vertical-align:middle;
+  }
+  .roundbtn,.dot,#big-emoji,#boss-emoji,#chest-emoji,#loot-reveal,.book-cell,.shop-cell{
+    display:flex; align-items:center; justify-content:center;
+  }
+  .bigbtn,.smallbtn{display:inline-flex; align-items:center; justify-content:center; gap:.35em;}
+  .smallbtn.danger{background:#ff5c6c; box-shadow:0 4px 0 #c73848;}
+  .smallbtn.danger:active{box-shadow:0 1px 0 #c73848;}
+  .danger-zone{background:#fff0f2; border:3px dashed #ff9aaa; border-radius:18px; padding:12px; display:flex; flex-direction:column; gap:8px;}
+  .danger-zone small{font-size:13px; font-weight:700; opacity:.65;}
+
+  #scr-game{justify-content:flex-start; gap:6px;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(255,255,255,.95), transparent 14%),
+      radial-gradient(circle at 86% 24%, rgba(255,255,255,.8), transparent 12%),
+      linear-gradient(180deg,#BFEAFF 0%,#FFE9F7 56%,#FFF2BC 78%,#BDF4C8 100%);
+  }
+  #scr-game::after{content:""; position:absolute; left:-8%; right:-8%; bottom:-10%; height:26%; z-index:0;
+    background:radial-gradient(ellipse at center,#8ef0a6 0%,#67dd8d 52%,#45c979 100%);
+    border-radius:50% 50% 0 0; box-shadow:0 -10px 30px rgba(62,217,164,.25);
+  }
+  #scr-game > :not(.game-decor){position:relative; z-index:1;}
+  .game-decor{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;}
+  .decor{position:absolute; font-size:clamp(30px,7vw,78px); filter:drop-shadow(0 8px 8px rgba(42,34,80,.12)); opacity:.92; animation:decorfloat 4s ease-in-out infinite;}
+  .decor-rainbow{left:3%; top:12%; font-size:clamp(52px,10vw,120px); transform:rotate(-8deg);}
+  .decor-unicorn{right:4%; bottom:9%; font-size:clamp(52px,9vw,110px); animation-duration:3.2s;}
+  .decor-cloud1{right:10%; top:12%; opacity:.82; animation-duration:5s;}
+  .decor-cloud2{left:16%; top:27%; opacity:.78; animation-duration:5.6s;}
+  .decor-flower{left:8%; bottom:7%; animation-duration:3.8s;}
+  .decor-star1{right:22%; top:36%; font-size:clamp(24px,5vw,54px); animation-duration:2.8s;}
+  .decor-star2{left:28%; bottom:18%; font-size:clamp(22px,4vw,48px); animation-duration:3.4s;}
+  @keyframes decorfloat{0%,100%{translate:0 0}50%{translate:0 -12px}}
+  #scr-game #topbar{background:rgba(255,255,255,.42); border:3px solid rgba(255,255,255,.55); border-radius:22px; padding:6px; box-shadow:0 6px 18px rgba(42,34,80,.08);}
+  #heart-count{min-width:1.2em; display:inline-block; text-align:center;}
+  .heart-hit{animation:heartHit .45s ease;}
+  @keyframes heartHit{0%,100%{transform:scale(1)}35%{transform:scale(1.35) rotate(-8deg); filter:brightness(1.4)}}
+  #big-emoji{width:clamp(108px,22vw,190px); height:clamp(108px,22vw,190px); margin:6px 0 0; border-radius:50%;
+    background:rgba(255,255,255,.64); border:4px solid rgba(255,255,255,.75); box-shadow:0 10px 22px rgba(42,34,80,.12), inset 0 -8px 0 rgba(255,255,255,.3);
+  }
+  .helper-row{background:rgba(255,255,255,.45); border-radius:999px; padding:6px 10px; box-shadow:0 5px 16px rgba(42,34,80,.08);}
+  #instruction{background:rgba(255,255,255,.78); border:3px solid rgba(255,255,255,.85); border-radius:999px; padding:8px 18px; box-shadow:0 4px 0 rgba(42,34,80,.09);}
+  #slots{background:rgba(255,255,255,.38); border:3px solid rgba(255,255,255,.55); border-radius:28px; padding:10px; box-shadow:0 10px 22px rgba(42,34,80,.08);}
+  #tiles{width:min(96vw,650px); min-height:110px; background:rgba(255,255,255,.48); border:3px solid rgba(255,255,255,.62); border-radius:30px; padding:14px; box-shadow:0 12px 26px rgba(42,34,80,.1);}
+  #feedback{min-width:min(92vw,450px); background:rgba(255,255,255,.75); border-radius:20px; padding:8px 16px; box-shadow:0 5px 0 rgba(42,34,80,.08);}
+  .slot.wrongflash{animation:wrongflash .55s ease;}
+  @keyframes wrongflash{0%,100%{background:rgba(255,255,255,.55)}35%{background:#ffe0e5; border-color:#ff6f82; transform:scale(1.08)}}
+  .boss-mode #scr-game{background:linear-gradient(180deg,#DAD7FF 0%,#FFE9F7 56%,#FFF2BC 100%);}
+  .boss-mode #boss-bar{background:rgba(255,255,255,.58); border:3px solid rgba(255,255,255,.7); border-radius:28px; padding:6px 18px; box-shadow:0 10px 24px rgba(42,34,80,.12);}
+  #boss-emoji.hit{animation:bosshit .7s cubic-bezier(.2,1.5,.4,1);}
+  @keyframes bosshit{0%{transform:scale(1); filter:drop-shadow(0 6px 10px rgba(42,34,80,.3))}
+    20%{transform:translateX(-18px) scale(.78) rotate(-12deg); filter:brightness(2.2) drop-shadow(0 0 22px #fff)}
+    45%{transform:translateX(16px) scale(1.18) rotate(10deg)}
+    70%{transform:translateX(-8px) scale(1.05) rotate(-5deg)}
+    100%{transform:translateX(0) scale(1) rotate(0); filter:drop-shadow(0 6px 10px rgba(42,34,80,.3))}}
+  .proj{position:fixed; font-size:36px; z-index:65; pointer-events:none; transition:all .55s cubic-bezier(.18,.85,.35,1.25);}
+  .boss-splash{position:fixed; z-index:70; pointer-events:none; font-size:clamp(22px,4vw,38px); font-weight:700; color:#fff;
+    background:linear-gradient(90deg,var(--mint),var(--himmel),var(--drue)); border-radius:999px; padding:10px 18px; box-shadow:0 8px 18px rgba(42,34,80,.25);
+    animation:splashpop 1s ease forwards; white-space:nowrap;}
+  @keyframes splashpop{0%{transform:translate(-50%,-50%) scale(.3); opacity:0}20%{transform:translate(-50%,-50%) scale(1.08); opacity:1}100%{transform:translate(-50%,-90%) scale(.95); opacity:0}}
+
   @media (max-width:420px){
     .tile{width:60px;height:66px;font-size:34px;} .slot{width:52px;height:60px;font-size:32px;}
     #big-emoji{font-size:92px;} #logo{font-size:42px;}
@@ -311,14 +375,28 @@
   <div class="ovl-box">
     <h2>📊 Fremgang</h2>
     <div id="stats-list"></div>
+    <div class="danger-zone">
+      <button class="smallbtn danger" onclick="resetSave()">🗑️ Slett save</button>
+      <small>Sletter all fremgang, mynter, bok og statistikk.</small>
+    </div>
     <button class="smallbtn" onclick="document.getElementById('stats-ovl').classList.remove('on')">Lukk</button>
   </div>
 </div>
 
 <!-- OPPGAVE -->
 <div class="screen" id="scr-game">
+  <div class="game-decor" aria-hidden="true">
+    <span class="decor decor-rainbow">🌈</span>
+    <span class="decor decor-unicorn">🦄</span>
+    <span class="decor decor-cloud1">☁️</span>
+    <span class="decor decor-cloud2">☁️</span>
+    <span class="decor decor-flower">🌸</span>
+    <span class="decor decor-star1">✨</span>
+    <span class="decor decor-star2">⭐</span>
+  </div>
   <div id="topbar">
     <div class="pill">✨ <span id="star-count">0</span></div>
+    <div class="pill">❤️ <span id="heart-count">5</span></div>
     <div id="path"></div>
     <div class="pill">🔥 <span id="streak-count">0</span></div>
   </div>
@@ -453,13 +531,16 @@ const THEMES = [
 ];
 
 // ---------- LAGRING ----------
-let SAVE = {name:"Sofia", collection:{}, coins:0, totalStars:0, bestStreak:0, runs:0, wordsSolved:0,
-  bossesBeaten:0, wordStats:{}, letterStats:{}, xp:0, chests:0, sinceLeg:0, recent:[],
-  lowerUnlocked:false, lowerOn:false, theme:"standard", setsClaimed:{}};
+function freshSave(){
+  return {name:"Sofia", collection:{}, coins:0, totalStars:0, bestStreak:0, runs:0, wordsSolved:0,
+    bossesBeaten:0, wordStats:{}, letterStats:{}, xp:0, chests:0, sinceLeg:0, recent:[],
+    lowerUnlocked:false, lowerOn:false, theme:"standard", setsClaimed:{}};
+}
+let SAVE = freshSave();
 async function loadSave(){
   try{
     const r = await window.storage.get("ordreisen-save");
-    if(r && r.value) SAVE = {...SAVE, ...JSON.parse(r.value)};
+    if(r && r.value) SAVE = {...freshSave(), ...JSON.parse(r.value)};
   }catch(e){}
   applyTheme(); applyLower(); renderStartStats();
 }
@@ -527,19 +608,36 @@ function pickVoice(){
     vs.find(v=>/^(da|sv)/i.test(v.lang)) || null;
 }
 if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+
+// Enkel uttale-ordbok for ord som Web Speech ofte sier feil på norsk.
+// Legg til flere her hvis iPad-stemmen lager rare uttaler.
+const ORD_UTTALE = {
+  IS:"iis", UGLE:"u gle", BJØRN:"bjørn", DRAGE:"dra-ge", TIGER:"ti-ger", KRONE:"kro-ne",
+  PANDA:"pan-da", KOALA:"ko-a-la", SEBRA:"se-bra", LAMPE:"lam-pe", FROSK:"frosk", SLOTT:"slott",
+  KLOVN:"klovn", EPLE:"ep-le", LØVE:"lø-ve", MÅNE:"må-ne", BRØD:"brød", ROSE:"ro-se",
+  ROBOT:"ro-bot", PIZZA:"pitsa", ØY:"øy", KU:"ku", BI:"bi", TE:"te"
+};
+function spokenWord(W){
+  const key=String(W||"").toUpperCase();
+  return ORD_UTTALE[key] || key.toLowerCase();
+}
+function speakWholeWord(W, opts={}){
+  speak(spokenWord(W), {rate:0.68, ...opts});
+}
+
 function speak(text, {rate=0.8, pitch=1.15, interrupt=true}={}){
   if(!window.speechSynthesis || !text) return;
   try{
     if(interrupt) speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);
-    u.lang="nb-NO"; u.rate=rate; u.pitch=pitch;
+    u.lang=NB_VOICE ? NB_VOICE.lang : "nb-NO"; u.rate=rate; u.pitch=pitch;
     if(NB_VOICE) u.voice=NB_VOICE;
     speechSynthesis.speak(u);
   }catch(e){}
 }
 function speakWord(txt){
   const w = (typeof txt==="string") ? txt : (currentWord ? currentWord.w : null);
-  if(w) speak(w.toLowerCase(), {rate:0.7});
+  if(w) speakWholeWord(w);
 }
 function speakSound(L){ speak(LYD[L]||L.toLowerCase(), {rate:0.55, pitch:1.2}); } // lydmetoden!
 
@@ -557,7 +655,7 @@ function soundOutWord(){
   });
   setTimeout(()=>{
     slots.forEach(s=>s.classList.remove("say"));
-    speak(W.toLowerCase(), {rate:0.65});
+    speakWholeWord(W, {rate:0.62});
   }, W.length*750+250);
 }
 
@@ -575,7 +673,7 @@ function spellOutWord(cb){
   });
   setTimeout(()=>{
     slots.forEach(s=>s.classList.remove("say"));
-    speak(W.toLowerCase()+"!", {rate:0.7});
+    speakWholeWord(W, {rate:0.64});
     sfx.chord();
   }, W.length*step+150);
   setTimeout(cb, W.length*step+950);
@@ -651,26 +749,27 @@ document.addEventListener("pointerdown", ()=>resetIdle());
 // ---------- ROGUELIKE-RUN ----------
 const ROOMS = 6;
 const CHEST_AFTER = [2,4,6];
+const MAX_HEARTS = 5;
 let run=null;
 
 const CHEER = ["SUPERT! 🌟","WOW! 🎉","DU KLARTE DET! 💪","FANTASTISK! 🦄","JIPPI! 🎈","KJEMPEBRA! 🌈","PERFEKT! ⭐"];
 const TRY_AGAIN = [
   "Nesten! Feil er bare neste steg! ✨",
-  "Bra forsøkt! Du lærer! +1 ✨",
+  "Bra forsøkt! Du lærer, men får stjerne når ordet blir riktig! ✨",
   "Prøv igjen – du blir sterkere! ✨",
   "Oi! Hjernen din vokser nå! 🧠✨",
   "Ikke gi opp – stjernestøv til deg! ✨"
 ];
 const LESSONS = [
   "Visste du? Hver gang du prøver på nytt, blir hjernen din litt sterkere! 🧠💪",
-  "Stjernestøvet ditt kom fra tingene du øvde på – feil er skatter! ✨",
+  "Stjerner får du når ordet blir riktig – feil viser bare hva vi skal øve på! ✨",
   "De beste leserne i verden gjorde mange feil først. Akkurat som deg! 🌟",
   "Å prøve igjen er en superkraft! 🦸‍♀️"
 ];
 
 function startRun(){
   ac() && AC.resume && AC.resume();
-  run = { room:0, streak:0, stars:0, solved:0, tries:0, usedWords:new Set(),
+  run = { room:0, streak:0, stars:0, solved:0, tries:0, mistakes:0, hearts:MAX_HEARTS, failed:false, usedWords:new Set(),
           bonusGiven:false, boss:null, bossHP:0, inBoss:false, levelUps:0, coinsWon:0, xpWon:0 };
   document.body.classList.remove("boss-mode");
   $("boss-bar").classList.remove("on");
@@ -695,6 +794,7 @@ function renderPath(){
 function updateHUD(){
   $("star-count").textContent=run.stars;
   $("streak-count").textContent=run.streak;
+  if($("heart-count")) $("heart-count").textContent=run.hearts;
   renderPath();
 }
 
@@ -844,20 +944,55 @@ function buildChallenge(mode){
 
 // ---------- RIKTIG / FEIL ----------
 function miss(el, expected){
+  if(!run || run.failed) return;
   run.tries++;
+  run.mistakes++;
   currentWord.firstTry=false;
+  currentWord.misses=(currentWord.misses||0)+1;
   statFor(currentWord.w).feil++;
   if(expected) letterMiss(expected);
-  run.streak=0; updateHUD();
+  run.streak=0;
+  run.hearts=Math.max(0, run.hearts-1);
+  updateHUD();
   sfx.wrong();
   el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
-  run.stars++; SAVE.totalStars++;
-  sfx.star(); flyStar(el);
-  const fb=$("feedback"); fb.className="fb-try"; fb.textContent=pick(TRY_AGAIN);
-  if(run.tries%3===0) speak("Prøv igjen, "+SAVE.name+"! Du klarer det!", {rate:0.9});
+  const openSlot=[...document.querySelectorAll("#slots .slot")].find(s=>!s.classList.contains("filled"));
+  if(openSlot){ openSlot.classList.remove("wrongflash"); void openSlot.offsetWidth; openSlot.classList.add("wrongflash"); }
+  const heartPill=$("heart-count") && $("heart-count").parentElement;
+  if(heartPill){ heartPill.classList.remove("heart-hit"); void heartPill.offsetWidth; heartPill.classList.add("heart-hit"); }
+  const fb=$("feedback"); fb.className="fb-try";
+  fb.textContent = run.hearts>0
+    ? "Nesten! Feil gir øving, men ikke stjerner. ❤️ " + run.hearts + " igjen"
+    : "Alle hjertene er brukt. Ny reise! 💛";
+  if(run.hearts<=0){
+    failRun();
+    return;
+  }
+  if(currentWord.misses>=2){
+    setTimeout(()=>soundOutWord(), 450);
+  } else if(run.tries%3===0) speak("Prøv igjen, "+SAVE.name+"! Hør godt etter.", {rate:0.9});
   else setTimeout(()=>speakWord(), 500);
-  updateHUD();
   resetIdle();
+}
+function failRun(){
+  clearTimeout(idleTimer);
+  run.failed=true;
+  document.querySelectorAll("#tiles button").forEach(b=>b.style.pointerEvents="none");
+  speak("Alle hjertene er brukt. Vi tar en ny reise. Du øvde bra!", {rate:0.88});
+  setTimeout(finishFailScreen, 1100);
+}
+function finishFailScreen(){
+  SAVE.runs++;
+  persist();
+  show("scr-end");
+  $("levelup-banner").style.display="none";
+  $("end-title").textContent="💛 ØVINGSREISE FERDIG";
+  $("end-stats").innerHTML =
+    "📚 Ord du klarte: <b>"+run.solved+"</b><br>"+
+    "❤️ Hjerter igjen: <b>0</b><br>"+
+    "✨ Stjerner: <b>"+run.stars+"</b><br>"+
+    "🔁 Trykk NY REISE og prøv igjen!";
+  $("end-lesson").textContent="Feil gir øving, men stjerner får du når ordet blir riktig. Neste runde blir bedre! 🌟";
 }
 
 function solveWord(){
@@ -877,6 +1012,14 @@ function solveWord(){
     SAVE.lowerUnlocked=true;
     toast("🎓 Du har låst opp VOKSEN-bokstavene! (abc) Se innstillinger!");
     sfx.levelup();
+  }
+  const starGain = currentWord.firstTry ? 2 : 1;
+  run.stars += starGain;
+  SAVE.totalStars += starGain;
+  flyStar($("big-emoji"), "✨");
+  if(currentWord.firstTry && run.streak>1){
+    run.stars += 1; SAVE.totalStars += 1;
+    setTimeout(()=>flyStar($("streak-count"), "🌟"), 140);
   }
   if(currentWord.mode==="lytt") $("big-emoji").textContent=currentWord.e;
   const heia = pick(CHEER) + (Math.random()<0.5 ? " "+SAVE.name.toUpperCase()+"!" : "");
@@ -921,8 +1064,8 @@ function startBoss(){
   $("boss-name").textContent=run.boss.navn;
   renderBossHP();
   updateHUD();
-  toast("👾 "+run.boss.navn+" har stjålet ordene!");
-  speak(run.boss.navn+" har stjålet ordene! Stav dem tilbake, "+SAVE.name+"!", {rate:0.95});
+  toast("👾 "+run.boss.navn+" har gjemt ordene!");
+  speak(run.boss.navn+" har gjemt ordene. Stav dem tilbake. "+SAVE.name+" er trygg!", {rate:0.92});
   setTimeout(bossNextWord, 1800);
 }
 function renderBossHP(){
@@ -942,7 +1085,7 @@ function bossNextWord(){
   currentWord.mode="stav";
   statFor(currentWord.w).sett++;
   hintCount=0;
-  $("instruction").textContent="Stav ordet og ta det tilbake! ⚔️";
+  $("instruction").textContent="Stav ordet: bossen mister hjerte! 💖";
   $("big-emoji").textContent=currentWord.e;
   $("feedback").textContent="";
   buildChallenge("stav");
@@ -951,23 +1094,35 @@ function bossNextWord(){
 }
 function bossHit(){
   const from=$("slots").getBoundingClientRect(), to=$("boss-emoji").getBoundingClientRect();
-  const p=document.createElement("div"); p.id="proj"; p.textContent="⭐";
-  p.style.left=from.left+from.width/2+"px"; p.style.top=from.top+"px";
-  document.body.appendChild(p);
-  requestAnimationFrame(()=>{ p.style.left=to.left+to.width/2+"px"; p.style.top=to.top+to.height/2+"px"; p.style.transform="scale(1.8) rotate(360deg)"; });
+  const emojis=["⭐","🌈","✨","💫"];
+  emojis.forEach((em,i)=>{
+    const p=document.createElement("div"); p.className="proj"; p.textContent=em;
+    p.style.left=(from.left+from.width/2+(i-1.5)*18)+"px"; p.style.top=(from.top+18+i*4)+"px";
+    document.body.appendChild(p);
+    setTimeout(()=>{
+      p.style.left=(to.left+to.width/2+(i-1.5)*10)+"px";
+      p.style.top=(to.top+to.height/2+(i%2?10:-10))+"px";
+      p.style.transform="scale(1.9) rotate("+(360+i*90)+"deg)";
+      p.style.opacity=".9";
+    }, 20+i*45);
+    setTimeout(()=>p.remove(), 850+i*45);
+  });
   setTimeout(()=>{
-    p.remove();
     run.bossHP--;
     renderBossHP();
-    sfx.streak(4);
+    sfx.streak(5);
     const be=$("boss-emoji");
     be.classList.remove("hit"); void be.offsetWidth; be.classList.add("hit");
-    if(run.bossHP<=0) setTimeout(bossDefeat, 550);
+    const splash=document.createElement("div"); splash.className="boss-splash";
+    splash.textContent = run.bossHP<=0 ? "🏆 BOSSEN ER FERDIG!" : "💖 BOSSEN MISTER ET HJERTE!";
+    splash.style.left=(to.left+to.width/2)+"px"; splash.style.top=(to.top+to.height/2)+"px";
+    document.body.appendChild(splash); setTimeout(()=>splash.remove(), 1050);
+    if(run.bossHP<=0) setTimeout(bossDefeat, 650);
     else {
-      speak("Au! "+run.boss.navn+" mistet et ord!", {rate:1});
-      setTimeout(bossNextWord, 1400);
+      speak("Bra! Bossen mister et hjerte. "+SAVE.name+" er trygg!", {rate:0.92});
+      setTimeout(bossNextWord, 1700);
     }
-  }, 520);
+  }, 650);
 }
 function bossDefeat(){
   SAVE.bossesBeaten++;
@@ -1099,7 +1254,7 @@ function afterChest(){
 function endRun(){
   SAVE.runs++;
   persist();
-  if(run.stars>=3 && !run.bonusGiven){
+  if(run.stars>=6 && !run.bonusGiven){
     run.bonusGiven=true;
     toast("✨ Stjernestøvet ditt ble til en ekstra skatt!");
     setTimeout(()=>showChest("bonus"), 900);
@@ -1251,6 +1406,8 @@ function testVoice(){
   ac() && AC.resume && AC.resume();
   const n=$("name-input").value.trim()||"Sofia";
   speak("Hei "+n+"! Skal vi lese ord sammen?", {rate:0.9});
+  setTimeout(()=>speakWholeWord("IS", {rate:0.62}), 1700);
+  setTimeout(()=>speakWholeWord("UGLE", {rate:0.62}), 2800);
 }
 function saveSettings(){
   const n=$("name-input").value.trim();
@@ -1280,6 +1437,25 @@ function openStats(){
   $("stats-list").innerHTML=html;
   $("stats-ovl").classList.add("on");
 }
+
+async function resetSave(){
+  const ok = confirm("Vil du slette ALL fremgang i Ordreisen? Dette kan ikke angres.");
+  if(!ok) return;
+  const typed = prompt("Skriv SLETT for å bekrefte.");
+  if(typed !== "SLETT"){
+    toast("Sletting avbrutt.");
+    return;
+  }
+  SAVE = freshSave();
+  run = null; currentWord = null;
+  await persist();
+  applyTheme(); applyLower(); renderStartStats();
+  $("stats-ovl").classList.remove("on");
+  $("settings-ovl").classList.remove("on");
+  show("scr-start");
+  toast("Save er slettet. Ny start! 🧹");
+}
+
 $("settings-ovl").addEventListener("click", e=>{ if(e.target.id==="settings-ovl") e.target.classList.remove("on"); });
 $("shop-ovl").addEventListener("click", e=>{ if(e.target.id==="shop-ovl") e.target.classList.remove("on"); });
 $("stats-ovl").addEventListener("click", e=>{ if(e.target.id==="stats-ovl") e.target.classList.remove("on"); });
