@@ -408,7 +408,7 @@
   <div id="big-emoji">☀️</div>
   <div class="helper-row">
     <button class="roundbtn" onclick="speakWord()" title="Hør ordet">🔊</button>
-    <button class="roundbtn" onclick="soundOutWord()" title="Lyder ordet">🦉</button>
+    <button class="roundbtn" onclick="soundOutWord()" title="Vis ordet sakte">🦉</button>
   </div>
   <div id="instruction">Stav ordet!</div>
   <div id="slots"></div>
@@ -601,18 +601,20 @@ let NB_VOICE=null;
 function pickVoice(){
   if(!window.speechSynthesis) return;
   const vs=speechSynthesis.getVoices();
+  // Root cause fix: do not fall back to Danish/Swedish voices. They can
+  // pronounce Norwegian words unpredictably, especially short words. If no
+  // Norwegian voice exists, keep voice=null and still request nb-NO.
   NB_VOICE =
     vs.find(v=>/^(nb|no)/i.test(v.lang) && /premium|enhanced|natural/i.test(v.name)) ||
     vs.find(v=>/^nb/i.test(v.lang)) ||
-    vs.find(v=>/^no/i.test(v.lang)) ||
-    vs.find(v=>/^(da|sv)/i.test(v.lang)) || null;
+    vs.find(v=>/^no/i.test(v.lang)) || null;
 }
 if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 
 // Enkel uttale-ordbok for ord som Web Speech ofte sier feil på norsk.
 // Legg til flere her hvis iPad-stemmen lager rare uttaler.
 const ORD_UTTALE = {
-  IS:"iis", UGLE:"u gle", BJØRN:"bjørn", DRAGE:"dra-ge", TIGER:"ti-ger", KRONE:"kro-ne",
+  IS:"iis", SEL:"seel", UGLE:"ugle", BJØRN:"bjørn", DRAGE:"dra-ge", TIGER:"ti-ger", KRONE:"kro-ne",
   PANDA:"pan-da", KOALA:"ko-a-la", SEBRA:"se-bra", LAMPE:"lam-pe", FROSK:"frosk", SLOTT:"slott",
   KLOVN:"klovn", EPLE:"ep-le", LØVE:"lø-ve", MÅNE:"må-ne", BRØD:"brød", ROSE:"ro-se",
   ROBOT:"ro-bot", PIZZA:"pitsa", ØY:"øy", KU:"ku", BI:"bi", TE:"te"
@@ -620,6 +622,29 @@ const ORD_UTTALE = {
 function spokenWord(W){
   const key=String(W||"").toUpperCase();
   return ORD_UTTALE[key] || key.toLowerCase();
+}
+
+// One TTS sequence at a time. This prevents old letter-sound timers from
+// speaking after a whole word, which caused examples like "SEL ... L L" and
+// "UGLE ... L".
+let TTS_SEQ=0;
+let TTS_TIMERS=[];
+function clearTTS(cancelSpeech=true){
+  TTS_SEQ++;
+  TTS_TIMERS.forEach(id=>clearTimeout(id));
+  TTS_TIMERS=[];
+  if(cancelSpeech && window.speechSynthesis){
+    try{ speechSynthesis.cancel(); }catch(e){}
+  }
+  return TTS_SEQ;
+}
+function scheduleTTS(seq, fn, delay){
+  const id=setTimeout(()=>{
+    if(seq!==TTS_SEQ) return;
+    fn();
+  }, delay);
+  TTS_TIMERS.push(id);
+  return id;
 }
 function speakWholeWord(W, opts={}){
   speak(spokenWord(W), {rate:0.68, ...opts});
@@ -630,53 +655,66 @@ function speak(text, {rate=0.8, pitch=1.15, interrupt=true}={}){
   try{
     if(interrupt) speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);
-    u.lang=NB_VOICE ? NB_VOICE.lang : "nb-NO"; u.rate=rate; u.pitch=pitch;
+    u.lang="nb-NO"; u.rate=rate; u.pitch=pitch;
     if(NB_VOICE) u.voice=NB_VOICE;
     speechSynthesis.speak(u);
   }catch(e){}
 }
 function speakWord(txt){
+  clearTTS(true);
   const w = (typeof txt==="string") ? txt : (currentWord ? currentWord.w : null);
   if(w) speakWholeWord(w);
 }
-function speakSound(L){ speak(LYD[L]||L.toLowerCase(), {rate:0.55, pitch:1.2}); } // lydmetoden!
+function speakSound(L){
+  // Web Speech is bad at pure consonant sounds (especially L), so letter
+  // "sounds" are now visual + musical only. Whole words are the only spoken TTS.
+  sfx.ladder(0);
+}
 
-// 🦉 Lyder ordet: sakte lyd-for-lyd, så smelter det sammen til ordet
+// 🦉 Lyder ordet: only when the owl/helper is pressed. Automatic success
+// feedback no longer speaks letter sounds, so whole-word TTS cannot get a
+// trailing L-sound from words like SEL or UGLE.
 function soundOutWord(){
   if(!currentWord) return;
   resetIdle();
+  const seq=clearTTS(true);
   const W=currentWord.w, slots=[...document.querySelectorAll("#slots .slot")];
   W.split("").forEach((L,i)=>{
-    setTimeout(()=>{
+    scheduleTTS(seq, ()=>{
       slots.forEach(s=>s.classList.remove("say"));
       if(slots[i]) slots[i].classList.add("say");
-      speakSound(L);
-    }, i*750);
+      sfx.ladder(i);
+    }, i*850);
   });
-  setTimeout(()=>{
+  scheduleTTS(seq, ()=>{
     slots.forEach(s=>s.classList.remove("say"));
     speakWholeWord(W, {rate:0.62});
-  }, W.length*750+250);
+  }, W.length*850+350);
 }
 
-// Seiersstaving: lyd-for-lyd med lysende ruter, så hele ordet
+// Seiersstaving: visual + musical only, then speaks the whole word once.
+// This fixes the root cause of extra spoken letters after completed words.
 function spellOutWord(cb){
+  const seq=clearTTS(true);
   const slots=[...document.querySelectorAll("#slots .slot")];
-  const W=currentWord.w, step=520;
+  const W=currentWord.w, step=360;
   W.split("").forEach((L,i)=>{
-    setTimeout(()=>{
+    scheduleTTS(seq, ()=>{
       slots.forEach(s=>s.classList.remove("say"));
       if(slots[i]) slots[i].classList.add("say");
-      speakSound(L);
       sfx.ladder(i);
     }, i*step);
   });
-  setTimeout(()=>{
+  scheduleTTS(seq, ()=>{
     slots.forEach(s=>s.classList.remove("say"));
     speakWholeWord(W, {rate:0.64});
     sfx.chord();
-  }, W.length*step+150);
-  setTimeout(cb, W.length*step+950);
+  }, W.length*step+120);
+  const wordRef=currentWord;
+  setTimeout(()=>{
+    // This is game progression, not TTS. Do not let a speaker tap cancel it.
+    if(currentWord===wordRef && run && !run.failed) cb();
+  }, W.length*step+900);
 }
 
 // ---------- LÆRINGSSYSTEM ----------
@@ -740,7 +778,8 @@ function resetIdle(){
     const be=$("big-emoji");
     be.classList.remove("wave"); void be.offsetWidth; be.classList.add("wave");
     const first=currentWord.w[0];
-    speak("Psst... ordet begynner med "+(LYD[first]||first.toLowerCase()), {rate:0.7, pitch:1.05});
+    clearTTS(true);
+    speak("Psst... se etter bokstaven "+first, {rate:0.7, pitch:1.05});
     resetIdle();
   }, 12000);
 }
@@ -818,6 +857,7 @@ function wordForRoom(r){
 }
 
 function nextRoom(){
+  clearTTS(true);
   run.room++;
   if(run.room>ROOMS){ startBoss(); return; }
   currentWord = wordForRoom(run.room);
@@ -830,7 +870,7 @@ function nextRoom(){
   else mode=pick(["stav","stav","lytt"]);
   currentWord.mode=mode;
   setupRoomUI(mode);
-  setTimeout(()=>speakWord(),400);
+  scheduleTTS(TTS_SEQ, ()=>speakWord(), 400);
 }
 function setupRoomUI(mode){
   hintCount=0;
@@ -969,13 +1009,21 @@ function miss(el, expected){
     return;
   }
   if(currentWord.misses>=2){
-    setTimeout(()=>soundOutWord(), 450);
-  } else if(run.tries%3===0) speak("Prøv igjen, "+SAVE.name+"! Hør godt etter.", {rate:0.9});
-  else setTimeout(()=>speakWord(), 500);
+    const seq=clearTTS(false);
+    scheduleTTS(seq, ()=>soundOutWord(), 450);
+  } else if(run.tries%3===0){
+    clearTTS(true);
+    speak("Prøv igjen, "+SAVE.name+"! Hør godt etter.", {rate:0.9});
+  }
+  else {
+    const seq=clearTTS(false);
+    scheduleTTS(seq, ()=>speakWord(), 500);
+  }
   resetIdle();
 }
 function failRun(){
   clearTimeout(idleTimer);
+  clearTTS(true);
   run.failed=true;
   document.querySelectorAll("#tiles button").forEach(b=>b.style.pointerEvents="none");
   speak("Alle hjertene er brukt. Vi tar en ny reise. Du øvde bra!", {rate:0.88});
@@ -996,7 +1044,10 @@ function finishFailScreen(){
 }
 
 function solveWord(){
+  if(!currentWord || currentWord.done || !run || run.failed) return;
+  currentWord.done=true;
   clearTimeout(idleTimer);
+  clearTTS(true);
   run.solved++; SAVE.wordsSolved++;
   statFor(currentWord.w).klart++;
   noteFirstTry(currentWord.firstTry);
@@ -1053,6 +1104,7 @@ function solveWord(){
 
 // ---------- ORD-BOSS ----------
 function startBoss(){
+  clearTTS(true);
   run.inBoss=true;
   const lvl=levelOf(SAVE.xp);
   run.boss=pick(BOSSES.filter(b=>b.lvl<=lvl));
@@ -1090,7 +1142,7 @@ function bossNextWord(){
   $("feedback").textContent="";
   buildChallenge("stav");
   resetIdle();
-  setTimeout(()=>speakWord(),400);
+  scheduleTTS(TTS_SEQ, ()=>speakWord(), 400);
 }
 function bossHit(){
   const from=$("slots").getBoundingClientRect(), to=$("boss-emoji").getBoundingClientRect();
@@ -1404,10 +1456,12 @@ function openSettings(){
 }
 function testVoice(){
   ac() && AC.resume && AC.resume();
+  const seq=clearTTS(true);
   const n=$("name-input").value.trim()||"Sofia";
   speak("Hei "+n+"! Skal vi lese ord sammen?", {rate:0.9});
-  setTimeout(()=>speakWholeWord("IS", {rate:0.62}), 1700);
-  setTimeout(()=>speakWholeWord("UGLE", {rate:0.62}), 2800);
+  scheduleTTS(seq, ()=>speakWholeWord("IS", {rate:0.62}), 1700);
+  scheduleTTS(seq, ()=>speakWholeWord("SEL", {rate:0.62}), 2800);
+  scheduleTTS(seq, ()=>speakWholeWord("UGLE", {rate:0.62}), 3900);
 }
 function saveSettings(){
   const n=$("name-input").value.trim();
@@ -1439,6 +1493,7 @@ function openStats(){
 }
 
 async function resetSave(){
+  clearTTS(true);
   const ok = confirm("Vil du slette ALL fremgang i Ordreisen? Dette kan ikke angres.");
   if(!ok) return;
   const typed = prompt("Skriv SLETT for å bekrefte.");
@@ -1460,11 +1515,12 @@ $("settings-ovl").addEventListener("click", e=>{ if(e.target.id==="settings-ovl"
 $("shop-ovl").addEventListener("click", e=>{ if(e.target.id==="shop-ovl") e.target.classList.remove("on"); });
 $("stats-ovl").addEventListener("click", e=>{ if(e.target.id==="stats-ovl") e.target.classList.remove("on"); });
 
-// Trykk på fylt bokstavrute → hør bokstavLYDEN (lydmetoden)
+// Trykk på fylt bokstavrute → vis/marker bokstaven uten ekstra TTS
 $("slots").addEventListener("click", e=>{
   const s=e.target.closest(".slot");
   if(s && s.classList.contains("filled") && s.textContent){
-    speakSound(s.textContent.toUpperCase());
+    clearTTS(true);
+    sfx.ladder(0);
     s.classList.add("say"); setTimeout(()=>s.classList.remove("say"), 450);
   }
 });
