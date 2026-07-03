@@ -172,6 +172,18 @@
   #boss-name{font-weight:700; font-size:20px; color:var(--drue);}
   #boss-hp{font-size:24px; letter-spacing:3px;}
   .boss-mode #big-emoji{font-size:64px; margin:0;}
+  /* Kompakt boss-modus: lange ord (5 bokstaver + lurebokstav = 6 fliser)
+     må få plass på skjermen sammen med bossen. */
+  .boss-mode #boss-emoji{font-size:72px;}
+  .boss-mode #boss-name{font-size:17px;}
+  .boss-mode #boss-hp{font-size:19px;}
+  .boss-mode .helper-row{margin-top:0;}
+  .boss-mode #instruction{margin:0;}
+  .boss-mode #slots{margin:8px 0; min-height:0; gap:8px;}
+  .boss-mode .slot{width:56px; height:62px; font-size:34px;}
+  .boss-mode .tile{width:62px; height:66px; font-size:34px;}
+  .boss-mode #tiles{max-width:480px; gap:10px;}
+  .boss-mode #feedback{min-height:26px; font-size:19px; margin-top:6px;}
   #proj{position:fixed; font-size:34px; z-index:65; pointer-events:none; transition:all .5s cubic-bezier(.4,0,.6,1);}
 
   /* ---------- BOK & SETT ---------- */
@@ -220,6 +232,18 @@
     overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;}
   .toggle-row{display:flex; align-items:center; justify-content:space-between; background:#fff; border-radius:14px; padding:10px 14px; font-weight:700;}
   .toggle-row input{width:24px;height:24px;}
+
+  /* ---------- ROGUELIKE-VALG: reisevenn + veivalg ---------- */
+  #choice-ovl{position:fixed; inset:0; background:rgba(42,34,80,.5); display:none; align-items:center; justify-content:center; z-index:90;}
+  #choice-ovl.on{display:flex;}
+  #choice-grid{display:flex; flex-direction:column; gap:12px;}
+  .choice-btn{background:#fff; border:none; border-radius:22px; padding:14px 16px; font-family:inherit; cursor:pointer;
+    box-shadow:0 6px 0 var(--skygge); display:flex; align-items:center; gap:14px; text-align:left; transition:transform .08s; width:100%;}
+  .choice-btn:active{transform:translateY(3px);}
+  .choice-btn .ce{font-size:42px; line-height:1;}
+  .choice-btn .ct{display:flex; flex-direction:column; gap:2px;}
+  .choice-btn .cn{font-weight:700; font-size:19px; color:var(--natt);}
+  .choice-btn .cd{font-weight:600; font-size:14px; opacity:.7; color:var(--natt);}
 
   .conf{position:fixed; top:-20px; font-size:22px; pointer-events:none; z-index:50; animation:fall linear forwards;}
   @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
@@ -315,6 +339,11 @@
     #topbar{max-width:680px;}
     #boss-emoji{font-size:130px;}
     #boss-name{font-size:26px;} #boss-hp{font-size:30px;}
+    .boss-mode #boss-emoji{font-size:104px;}
+    .boss-mode #boss-name{font-size:22px;} .boss-mode #boss-hp{font-size:24px;}
+    .boss-mode .tile{width:80px; height:86px; font-size:44px;}
+    .boss-mode .slot{width:72px; height:78px; font-size:42px;}
+    .boss-mode #tiles{max-width:600px; gap:12px;}
     #chest-emoji{font-size:170px;}
     #loot-reveal{font-size:160px;}
     .glowring{width:340px; height:340px;}
@@ -403,6 +432,7 @@
     <div class="pill">❤️ <span id="heart-count">5</span></div>
     <div id="path"></div>
     <div class="pill">🔥 <span id="streak-count">0</span></div>
+    <div class="pill" id="charm-pill" style="display:none"></div>
   </div>
   <div id="boss-bar">
     <div id="boss-emoji">👾</div>
@@ -465,12 +495,24 @@
   </div>
 </div>
 
+<!-- ROGUELIKE-VALG: reisevenn ved start + veivalg underveis -->
+<div id="choice-ovl">
+  <div class="ovl-box">
+    <h2 id="choice-title"></h2>
+    <div id="choice-sub" style="font-weight:600"></div>
+    <div id="choice-grid"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 /* =========================================================
-   ORDREISEN v3 — norsk lese-roguelike for Sofia (5)
+   ORDREISEN v4 — norsk lese-roguelike for Sofia (5)
    Lydmetoden + adaptiv vanskelighet + variabel belønning
+   Roguelike-run: reisevenn (1 av 3) + veivalg trygg/modig
+   Tap er mulig og lønner seg litt (mot-hjerte + øvingsmynter),
+   men aldri mer enn å fullføre reisen.
    ========================================================= */
 
 // ---------- ORD ----------
@@ -538,7 +580,7 @@ const THEMES = [
 function freshSave(){
   return {name:"Sofia", collection:{}, coins:0, totalStars:0, bestStreak:0, runs:0, wordsSolved:0,
     bossesBeaten:0, wordStats:{}, letterStats:{}, xp:0, chests:0, sinceLeg:0, recent:[],
-    lowerUnlocked:false, lowerOn:false, theme:"standard", setsClaimed:{}};
+    lowerUnlocked:false, lowerOn:false, theme:"standard", setsClaimed:{}, comebackHeart:false};
 }
 let SAVE = freshSave();
 async function loadSave(){
@@ -640,7 +682,8 @@ if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged = pickV
 // Enkel uttale-ordbok for ord som Web Speech ofte sier feil på norsk.
 // Legg til flere her hvis iPad-stemmen lager rare uttaler.
 const ORD_UTTALE = {
-  IS:"iis", SEL:"seel", UGLE:"ugle", BJØRN:"bjørn", DRAGE:"dra-ge", TIGER:"ti-ger", KRONE:"kro-ne",
+  // "iis" ble stavet som I-I-S av enkelte stemmer – bruk det ekte ordet "is".
+  IS:"is", SEL:"seel", UGLE:"ugle", BJØRN:"bjørn", DRAGE:"dra-ge", TIGER:"ti-ger", KRONE:"kro-ne",
   PANDA:"pan-da", KOALA:"ko-a-la", SEBRA:"se-bra", LAMPE:"lam-pe", FROSK:"frosk", SLOTT:"slott",
   KLOVN:"klovn", EPLE:"ep-le", LØVE:"lø-ve", MÅNE:"må-ne", BRØD:"brød", ROSE:"ro-se",
   ROBOT:"ro-bot", PIZZA:"pitsa", ØY:"øy", KU:"ku", BI:"bi", TE:"te"
@@ -692,30 +735,31 @@ function speakWord(txt){
   if(w) speakWholeWord(w);
 }
 function speakSound(L){
-  // Web Speech is bad at pure consonant sounds (especially L), so letter
-  // "sounds" are now visual + musical only. Whole words are the only spoken TTS.
+  // Bokstavlyd (lydmetoden). Interrupt-hopp mellom bokstaver styres av
+  // seq-vernet i scheduleTTS, så gamle lyder kan ikke lekke inn etter ordet.
   sfx.ladder(0);
+  speak(LYD[L]||L, {rate:0.55, pitch:1.1});
 }
 
-// 🦉 Lyder ordet: only when the owl/helper is pressed. Automatic success
-// feedback no longer speaks letter sounds, so whole-word TTS cannot get a
-// trailing L-sound from words like SEL or UGLE.
+// 🦉 Lyder ordet: uglehjelpen SIER hver bokstavlyd mens ruten lyser,
+// og sier hele ordet til slutt. (Var en periode kun visuell/musikalsk –
+// det gjorde uglen "stum". Stray-letter-buggen er løst av TTS_SEQ-vernet.)
 function soundOutWord(){
   if(!currentWord) return;
   resetIdle();
   const seq=clearTTS(true);
-  const W=currentWord.w, slots=[...document.querySelectorAll("#slots .slot")];
+  const W=currentWord.w, slots=[...document.querySelectorAll("#slots .slot")], step=950;
   W.split("").forEach((L,i)=>{
     scheduleTTS(seq, ()=>{
       slots.forEach(s=>s.classList.remove("say"));
       if(slots[i]) slots[i].classList.add("say");
-      sfx.ladder(i);
-    }, i*850);
+      speakSound(L);
+    }, i*step);
   });
   scheduleTTS(seq, ()=>{
     slots.forEach(s=>s.classList.remove("say"));
     speakWholeWord(W, {rate:0.62});
-  }, W.length*850+350);
+  }, W.length*step+500);
 }
 
 // Seiersstaving: visual + musical only, then speaks the whole word once.
@@ -832,10 +876,61 @@ const LESSONS = [
   "Å prøve igjen er en superkraft! 🦸‍♀️"
 ];
 
+// Reisevenner: velg 1 av 3 ved reisens start – gjelder KUN denne reisen (roguelike-build)
+const CHARMS = [
+  {id:"hjerte",  e:"💖", navn:"Hjertevennen",   kort:"To ekstra hjerter",                    si:"Hjertevennen gir deg to ekstra hjerter!"},
+  {id:"skjold",  e:"🛡️", navn:"Skjoldvennen",   kort:"Første feil på hvert ord koster ikke hjerte", si:"Skjoldvennen tar den første feilen på hvert ord!"},
+  {id:"magnet",  e:"🧲", navn:"Gull-magneten",  kort:"Mange flere gylne bokstaver",          si:"Gull-magneten finner mange flere gylne bokstaver!"},
+  {id:"klover",  e:"🍀", navn:"Lykke-kløveren", kort:"Bedre skatter i kistene",              si:"Lykke-kløveren gir deg bedre skatter i kistene!"},
+  {id:"stjerne", e:"🌠", navn:"Stjernevennen",  kort:"Ekstra stjerne for hvert ord",         si:"Stjernevennen gir deg en ekstra stjerne for hvert ord!"},
+  {id:"mynt",    e:"🪙", navn:"Mynt-trollet",   kort:"En mynt for hvert ord du klarer",      si:"Mynt-trollet gir deg en mynt for hvert ord du klarer!"},
+];
+// Veivalg: trygg eller modig sti etter kisterommene (risiko/belønning)
+const PATHS = [
+  {id:"trygg", e:"🌸", navn:"Blomsterstien", kort:"En fin og trygg vei"},
+  {id:"modig", e:"⚡", navn:"Lynstien",      kort:"Vanskeligere ord – dobbelt stjerner og bedre skatt!"},
+];
+
 function startRun(){
   ac() && AC.resume && AC.resume();
   run = { room:0, streak:0, stars:0, solved:0, tries:0, mistakes:0, hearts:MAX_HEARTS, failed:false, usedWords:new Set(),
-          bonusGiven:false, boss:null, bossHP:0, inBoss:false, levelUps:0, coinsWon:0, xpWon:0 };
+          bonusGiven:false, boss:null, bossHP:0, inBoss:false, levelUps:0, coinsWon:0, xpWon:0,
+          charm:null, brave:0, braveLoot:false, banked:false, coinsBanked:0, comeback:false };
+  if(SAVE.comebackHeart){ // 💪 Mot-hjertet fra en tapt reise – boolsk, kan ikke stables
+    run.hearts++; run.comeback=true;
+    SAVE.comebackHeart=false; persist();
+    toast("💪 Mot-hjertet fra forrige reise gir deg et ekstra hjerte!");
+  }
+  $("charm-pill").style.display="none";
+  offerCharm();
+}
+function offerCharm(){
+  const opts=shuffle(CHARMS).slice(0,3);
+  $("choice-title").textContent="🎒 Velg en reisevenn!";
+  $("choice-sub").textContent="Vennen er med deg på hele denne reisen.";
+  const g=$("choice-grid"); g.innerHTML="";
+  opts.forEach(c=>{
+    const b=document.createElement("button"); b.className="choice-btn";
+    b.innerHTML='<span class="ce">'+c.e+'</span><span class="ct"><span class="cn">'+c.navn+'</span><span class="cd">'+c.kort+'</span></span>';
+    b.onclick=()=>{ sfx.pop(); pickCharm(c); };
+    g.appendChild(b);
+  });
+  $("choice-ovl").classList.add("on");
+  clearTTS(true);
+  speak("Velg en reisevenn som blir med på reisen!", {rate:0.9});
+}
+function pickCharm(c){
+  if(!run || run.charm) return; // vern mot dobbelttrykk
+  run.charm=c.id;
+  if(c.id==="hjerte") run.hearts+=2;
+  $("choice-ovl").classList.remove("on");
+  const pill=$("charm-pill");
+  pill.textContent=c.e; pill.title=c.navn; pill.style.display="";
+  toast(c.e+" "+c.navn+" blir med!");
+  clearTTS(true); speak(c.si, {rate:0.92});
+  setTimeout(beginJourney, 2200);
+}
+function beginJourney(){
   document.body.classList.remove("boss-mode");
   $("boss-bar").classList.remove("on");
   show("scr-game");
@@ -878,7 +973,7 @@ function wordForRoom(r, mode="stav"){
   else if(r<=2) lens=[2,3];
   else if(r<=4) lens=[3,4];
   else lens=[4,5];
-  const shift=difficultyShift();
+  const shift=difficultyShift() + (run.brave>0 ? 1 : 0); // ⚡ Lynstien: litt lengre ord
   lens=[...new Set(lens.map(L=>Math.max(minLen,Math.min(5,L+shift))))].filter(L=>WORDS[L] && WORDS[L].length);
   for(let t=0;t<40;t++){
     const L=pick(lens), w=pick(WORDS[L]);
@@ -897,6 +992,7 @@ function nextRoom(){
   else mode=pick(["stav","stav","lytt"]);
   currentWord = wordForRoom(run.room, mode);
   currentWord.firstTry = true;
+  if(run.brave>0){ currentWord.brave=true; run.brave--; }
   statFor(currentWord.w).sett++;
   updateHUD();
   currentWord.mode=mode;
@@ -987,9 +1083,9 @@ function buildChallenge(mode){
   if(W.length>=4) pool.push(smartDecoy(pick(letters), letters)); // smart lurebokstav
   let idx=0;
   const shuffled=shuffle(pool);
-  // ✨ Gyllen bokstav (8 %): en riktig bokstav skinner – gir mynter!
+  // ✨ Gyllen bokstav (8 %, 30 % med Gull-magneten): en riktig bokstav skinner – gir mynter!
   let goldLetter=null;
-  if(Math.random()<0.08){
+  if(Math.random() < (run && run.charm==="magnet" ? 0.30 : 0.08)){
     const cands=shuffled.filter(L=>letters.includes(L));
     if(cands.length) goldLetter=pick(cands);
   }
@@ -1004,7 +1100,7 @@ function buildChallenge(mode){
         sfx.ladder(idx); // 🎵 stigende tone per bokstav
         const s=slots.children[idx]; s.textContent=L; s.classList.add("filled");
         if(b.dataset.gull){
-          SAVE.coins+=2; run.coinsWon+=2;
+          run.coinsWon+=2; // i reisesekken – bankes ved reisens slutt
           sfx.coin(); flyStar(b,"🪙");
           toast("✨ Gyllen bokstav! +2 🪙");
         }
@@ -1026,18 +1122,23 @@ function miss(el, expected){
   statFor(currentWord.w).feil++;
   if(expected) letterMiss(expected);
   run.streak=0;
-  run.hearts=Math.max(0, run.hearts-1);
+  // 🛡️ Skjoldvennen: første feil på hvert ord koster ikke hjerte
+  const shielded = run.charm==="skjold" && !currentWord.shieldUsed;
+  if(shielded) currentWord.shieldUsed=true;
+  else run.hearts=Math.max(0, run.hearts-1);
   updateHUD();
   sfx.wrong();
   el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
   const openSlot=[...document.querySelectorAll("#slots .slot")].find(s=>!s.classList.contains("filled"));
   if(openSlot){ openSlot.classList.remove("wrongflash"); void openSlot.offsetWidth; openSlot.classList.add("wrongflash"); }
   const heartPill=$("heart-count") && $("heart-count").parentElement;
-  if(heartPill){ heartPill.classList.remove("heart-hit"); void heartPill.offsetWidth; heartPill.classList.add("heart-hit"); }
+  if(heartPill && !shielded){ heartPill.classList.remove("heart-hit"); void heartPill.offsetWidth; heartPill.classList.add("heart-hit"); }
   const fb=$("feedback"); fb.className="fb-try";
-  fb.textContent = run.hearts>0
-    ? "Nesten! Feil gir øving, men ikke stjerner. ❤️ " + run.hearts + " igjen"
-    : "Alle hjertene er brukt. Ny reise! 💛";
+  fb.textContent = shielded
+    ? "🛡️ Skjoldvennen tok støyten! Prøv igjen."
+    : run.hearts>0
+      ? "Nesten! Feil gir øving, men ikke stjerner. ❤️ " + run.hearts + " igjen"
+      : "Alle hjertene er brukt. Ny reise! 💛";
   if(run.hearts<=0){
     failRun();
     return;
@@ -1055,24 +1156,39 @@ function miss(el, expected){
   }
   resetIdle();
 }
+// Reisesekken bankes ved reisens slutt. Seier = alt. Tap = halvparten + trøstemynter
+// (krever minst 3 løste ord, maks 4) – å feile med vilje lønner seg aldri.
+function bankRun(win){
+  if(run.banked) return;
+  run.banked=true;
+  let coins=run.coinsWon;
+  if(!win){
+    coins=Math.ceil(coins/2);
+    if(run.solved>=3) coins+=Math.min(4, run.solved);
+  }
+  run.coinsBanked=coins;
+  SAVE.coins+=coins;
+}
 function failRun(){
   clearTimeout(idleTimer);
   clearTTS(true);
   run.failed=true;
   document.querySelectorAll("#tiles button").forEach(b=>b.style.pointerEvents="none");
-  speak("Alle hjertene er brukt. Vi tar en ny reise. Du øvde bra!", {rate:0.88});
+  speak("Alle hjertene er brukt. Men du øvde kjempebra, og får et mot-hjerte til neste reise!", {rate:0.88});
   setTimeout(finishFailScreen, 1100);
 }
 function finishFailScreen(){
+  bankRun(false);
+  SAVE.comebackHeart=true; // 💪 Mot-hjertet: +1 hjerte neste reise (boolsk – ikke stablebart)
   SAVE.runs++;
   persist();
   show("scr-end");
   $("levelup-banner").style.display="none";
-  $("end-title").textContent="💛 ØVINGSREISE FERDIG";
+  $("end-title").textContent="💪 MODIG ØVINGSREISE!";
   $("end-stats").innerHTML =
-    "📚 Ord du klarte: <b>"+run.solved+"</b><br>"+
-    "❤️ Hjerter igjen: <b>0</b><br>"+
-    "✨ Stjerner: <b>"+run.stars+"</b><br>"+
+    "📚 Ord du klarte: <b>"+run.solved+"</b>"+(run.xpWon>0 ? " (+"+run.xpWon+" XP – den beholder du!)" : "")+"<br>"+
+    (run.coinsBanked>0 ? "🪙 Øvingsmynter: <b>+"+run.coinsBanked+"</b><br>" : "")+
+    "💪 Mot-hjerte: <b>+1 ❤️ på neste reise!</b><br>"+
     "🔁 Trykk NY REISE og prøv igjen!";
   $("end-lesson").textContent="Feil gir øving, men stjerner får du når ordet blir riktig. Neste runde blir bedre! 🌟";
 }
@@ -1098,9 +1214,12 @@ function solveWord(){
     toast("🎓 Du har låst opp VOKSEN-bokstavene! (abc) Se innstillinger!");
     sfx.levelup();
   }
-  const starGain = currentWord.firstTry ? 2 : 1;
+  let starGain = currentWord.firstTry ? 2 : 1;
+  if(run.charm==="stjerne") starGain += 1;      // 🌠 Stjernevennen
+  if(currentWord.brave) starGain *= 2;          // ⚡ Lynstien: dobbel stjerne-lønn
   run.stars += starGain;
   SAVE.totalStars += starGain;
+  if(run.charm==="mynt"){ run.coinsWon+=1; sfx.coin(); setTimeout(()=>flyStar($("big-emoji"),"🪙"),260); } // 🪙 Mynt-trollet
   flyStar($("big-emoji"), "✨");
   if(currentWord.firstTry && run.streak>1){
     run.stars += 1; SAVE.totalStars += 1;
@@ -1257,7 +1376,10 @@ function rollLoot(kind, boost=0){
 let chestLoot=null, chestKind=false, chestTaps=0;
 function showChest(kind){
   chestKind=kind; chestTaps=0;
-  chestLoot=rollLoot(kind, kind==="bonus" ? Math.min(run.stars,10) : 0);
+  let boost = kind==="bonus" ? Math.min(run.stars,10) : 0;
+  if(run.charm==="klover") boost+=7;                    // 🍀 Lykke-kløveren
+  if(run.braveLoot){ boost+=8; run.braveLoot=false; }   // ⚡ Lynstien: bedre neste kiste
+  chestLoot=rollLoot(kind, boost);
   show("scr-chest");
   $("chest-emoji").style.display="block";
   $("chest-emoji").className="";
@@ -1314,7 +1436,7 @@ function openChest(){
   ln.className="rar-"+chestLoot.r;
   const dup=!!SAVE.collection[chestLoot.e];
   if(dup){
-    SAVE.coins+=2; run && (run.coinsWon+=2);
+    run && (run.coinsWon+=2); // i reisesekken – bankes ved reisens slutt
     sfx.coin();
     $("chest-hint").textContent="Du har den fra før → +2 🪙 mynter!";
   } else {
@@ -1332,8 +1454,40 @@ function afterChest(){
   sfx.pop();
   if(chestKind==="bonus"){ finishEndScreen(); return; }
   if(chestKind==="boss"){ endRun(); return; }
+  if(chestKind!=="overraskelse" && (run.room===2 || run.room===4)){ offerPath(); return; } // 🗺️ veivalg
   show("scr-game");
   nextRoom();
+}
+
+// ---------- VEIVALG (roguelike: risiko mot belønning) ----------
+function offerPath(){
+  $("choice-title").textContent="🗺️ Velg vei!";
+  $("choice-sub").textContent="Hvilken sti tar du videre?";
+  const g=$("choice-grid"); g.innerHTML="";
+  PATHS.forEach(p=>{
+    const b=document.createElement("button"); b.className="choice-btn";
+    b.innerHTML='<span class="ce">'+p.e+'</span><span class="ct"><span class="cn">'+p.navn+'</span><span class="cd">'+p.kort+'</span></span>';
+    b.onclick=()=>{ sfx.pop(); pickPath(p); };
+    g.appendChild(b);
+  });
+  $("choice-ovl").classList.add("on");
+  clearTTS(true);
+  speak("Velg vei! Blomsterstien er trygg. Lynstien er vanskeligere, men gir dobbelt så mange stjerner og bedre skatt!", {rate:0.9});
+}
+function pickPath(p){
+  if(!run || run.pathPicked) return; // vern mot dobbelttrykk
+  run.pathPicked=true;
+  $("choice-ovl").classList.remove("on");
+  clearTTS(true);
+  if(p.id==="modig"){
+    run.brave=2; run.braveLoot=true;
+    toast("⚡ Lynstien! Vanskeligere ord – dobbel premie!");
+    speak("Modig valgt! Lykke til!", {rate:0.95});
+  } else {
+    toast("🌸 Blomsterstien! God tur!");
+  }
+  show("scr-game");
+  setTimeout(()=>{ run.pathPicked=false; nextRoom(); }, 1200);
 }
 
 // ---------- SLUTT ----------
@@ -1342,6 +1496,7 @@ function endRun(){
   persist();
   if(run.stars>=6 && !run.bonusGiven){
     run.bonusGiven=true;
+    $("chest-next").style.display="none"; // hindre dobbelttrykk før bonuskisten
     toast("✨ Stjernestøvet ditt ble til en ekstra skatt!");
     setTimeout(()=>showChest("bonus"), 900);
     return;
@@ -1349,6 +1504,7 @@ function endRun(){
   finishEndScreen();
 }
 function finishEndScreen(){
+  bankRun(true); // seier: hele reisesekken bankes
   show("scr-end");
   sfx.fanfare();
   confetti(50,true);
@@ -1368,7 +1524,7 @@ function finishEndScreen(){
   $("end-stats").innerHTML =
     "📚 Ord du leste: <b>"+run.solved+"</b> (+"+run.xpWon+" XP)<br>"+
     (run.boss && run.bossHP<=0 ? "👾 "+run.boss.navn+": <b>BESEIRET!</b> 🏆<br>" : "")+
-    (run.coinsWon>0 ? "🪙 Mynter: <b>+"+run.coinsWon+"</b><br>" : "")+
+    (run.coinsBanked>0 ? "🪙 Mynter: <b>+"+run.coinsBanked+"</b><br>" : "")+
     "🔥 Beste rekke: <b>"+SAVE.bestStreak+"</b><br>"+
     "✨ Stjernestøv: <b>"+run.stars+"</b>"+(run.bonusGiven?" → 🎁 bonusskatt!":"");
   $("end-lesson").textContent=pick(LESSONS);
