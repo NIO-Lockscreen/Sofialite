@@ -686,7 +686,7 @@ const THEMES = [
 function freshSave(){
   return {name:"Sofia", collection:{}, coins:0, totalStars:0, bestStreak:0, runs:0, wordsSolved:0,
     bossesBeaten:0, wordStats:{}, letterStats:{}, xp:0, chests:0, sinceLeg:0, recent:[],
-    lowerUnlocked:false, lowerOn:false, theme:"standard", setsClaimed:{}, comebackHeart:false, veivalg:true,
+    lowerUnlocked:false, lowerOn:false, lowerTaught:false, theme:"standard", setsClaimed:{}, comebackHeart:false, veivalg:true,
     newInBook:{}}; // ✨ nylig opplåste/kjøpte emojier som skinner i boka til de er sett
 }
 let SAVE = freshSave();
@@ -730,13 +730,18 @@ function ac(){
   if(!AC){
     try{
       AC=new (window.AudioContext||window.webkitAudioContext)();
-      // Kompressor som mykt tak: oscillatorene gikk rett i destination, og
-      // når flere toner overlappet (fanfare/kiste/akkord) klippet summen på
-      // iPad-høyttaleren → knitring og "billig" lyd.
-      MASTER=AC.createDynamicsCompressor();
-      MASTER.threshold.value=-18; MASTER.knee.value=24; MASTER.ratio.value=6;
-      MASTER.attack.value=0.003; MASTER.release.value=0.25;
-      MASTER.connect(AC.destination);
+      // Kjede: toner → lavpass → kompressor → utgangsdemper → høyttaler.
+      // Kompressoren alene var IKKE nok: WebAudio-kompressoren har
+      // automatisk makeup-gain som løfter summen mot full skala, så
+      // utgangen lå og skurte i metning likevel. Demperen (0.6) etterpå
+      // gir reell headroom, og lavpasset runder av de hardeste
+      // triangel/firkant-overtonene på iPad-høyttaleren.
+      const comp=AC.createDynamicsCompressor();
+      comp.threshold.value=-14; comp.knee.value=30; comp.ratio.value=4;
+      comp.attack.value=0.003; comp.release.value=0.25;
+      const damp=AC.createGain(); damp.gain.value=0.6;
+      MASTER=AC.createBiquadFilter(); MASTER.type="lowpass"; MASTER.frequency.value=6000; MASTER.Q.value=0.4;
+      MASTER.connect(comp); comp.connect(damp); damp.connect(AC.destination);
     }catch(e){}
   }
   // iOS suspenderer konteksten ved rutebytte/bakgrunn; gjenoppta ellers
@@ -1150,11 +1155,50 @@ function nextRoom(){
 }
 function setupRoomUI(mode){
   hintCount=0;
+  // Éngangs-feiring når småbokstav-læringen slår inn
+  if(!SAVE.lowerTaught && lowerTeachActive()){
+    SAVE.lowerTaught=true; SAVE.lowerUnlocked=true; persist();
+    toast("🎓 Nå lærer du de små bokstavene! a b c");
+    speak("Nå er du så flink at vi øver på små bokstaver også! Noen ord kommer med små bokstaver.", {rate:0.9, interrupt:false});
+  }
+  applyWordCase();
   $("big-emoji").textContent = mode==="lytt" ? "❓" : currentWord.e;
   $("big-emoji").style.animation="none"; void $("big-emoji").offsetWidth; $("big-emoji").style.animation="";
   $("feedback").textContent="";
   buildChallenge(mode);
   resetIdle();
+}
+
+// Fliser over to rader: når nok bokstaver er brukt til at resten får plass
+// på ÉN rad, tas de brukte ut av flyten og resten glir sammen (FLIP-
+// animasjon: mål før, fjern, mål etter, animer differansen).
+function compactTiles(){
+  const cont=$("tiles");
+  const unused=[...cont.querySelectorAll(".tile:not(.used)")];
+  const gone=[...cont.querySelectorAll(".tile.used")].filter(t=>t.style.display!=="none");
+  if(!unused.length || !gone.length) return;
+  const visible=[...unused,...gone];
+  if(new Set(visible.map(t=>t.offsetTop)).size<2) return; // alt står alt på én rad
+  const cs=getComputedStyle(cont);
+  const inner=cont.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+  const gap=parseFloat(cs.columnGap)||12;
+  const w=unused[0].getBoundingClientRect().width;
+  if(unused.length*w+(unused.length-1)*gap > inner) return; // resten fyller fortsatt flere rader
+  const before=new Map(unused.map(t=>[t,t.getBoundingClientRect()]));
+  gone.forEach(t=>t.style.display="none");
+  unused.forEach(t=>{
+    const b=before.get(t), a=t.getBoundingClientRect();
+    const dx=b.left-a.left, dy=b.top-a.top;
+    if(!dx && !dy) return;
+    t.style.transition="none";
+    t.style.transform="translate("+dx+"px,"+dy+"px)";
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      t.style.transition="transform .4s cubic-bezier(.3,1.35,.4,1)";
+      t.style.transform="scale(1.06)";
+      setTimeout(()=>{ t.style.transform=""; }, 220);
+    }));
+    setTimeout(()=>{ t.style.transition=""; t.style.transform=""; }, 700);
+  });
 }
 
 // ---------- OPPGAVETYPER ----------
@@ -1267,6 +1311,7 @@ function buildChallenge(mode){
           toast("✨ Gyllen bokstav! +2 🪙");
         }
         b.classList.add("used"); idx++;
+        setTimeout(compactTiles, 220); // la flisens egen krympe-animasjon spille først
         if(idx===letters.length) solveWord();
       } else miss(b, letters[idx]);
     };
@@ -1459,6 +1504,7 @@ function bossNextWord(){
   $("instruction").textContent="Stav ordet: bossen mister hjerte! 💖";
   $("big-emoji").textContent=currentWord.e;
   $("feedback").textContent="";
+  applyWordCase(); // småbokstav-læringen gjelder også boss-ord
   buildChallenge("stav");
   resetIdle();
   scheduleTTS(TTS_SEQ, ()=>speakWord(), 400);
@@ -1828,6 +1874,14 @@ function renderStartStats(){
 function applyTheme(){
   document.body.classList.remove("theme-regnbue","theme-natt","theme-godteri");
   if(SAVE.theme!=="standard") document.body.classList.add("theme-"+SAVE.theme);
+}
+// 🎓 Små bokstaver læres aktivt fra nivå 10 ELLER når hele serie 1 er
+// samlet: omtrent annenhvert ord vises med små bokstaver, så hun lærer
+// begge formene om hverandre. Manuell bryter (alltid små) overstyrer.
+function lowerTeachActive(){ return levelOf(SAVE.xp)>=10 || serie2Open(); }
+function applyWordCase(){
+  if(SAVE.lowerUnlocked && SAVE.lowerOn) { document.body.classList.add("lower"); return; }
+  document.body.classList.toggle("lower", lowerTeachActive() && Math.random()<0.5);
 }
 function applyLower(){
   document.body.classList.toggle("lower", SAVE.lowerUnlocked && SAVE.lowerOn);
