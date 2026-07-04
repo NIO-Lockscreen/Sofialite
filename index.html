@@ -227,6 +227,8 @@
   /* ✨-teller på EMOJIBOKA-knappene når noe nytt venter */
   .nybadge{display:none; background:#fff; color:var(--drue); border-radius:999px; padding:2px 12px; font-size:17px; animation:pump 1.4s ease-in-out infinite;}
   #book-bottom{position:fixed; bottom:calc(14px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); display:flex; gap:10px;}
+  .serie2-teaser{grid-column:1/-1; text-align:center; font-weight:600; font-size:16px; line-height:1.5; color:var(--natt);
+    background:linear-gradient(135deg,#EDE7FF,#FFE9F7); border:3px dashed var(--drue); border-radius:18px; padding:14px 16px;}
 
   /* ---------- BUTIKK (myntbruk) ---------- */
   #shop-ovl,#settings-ovl,#stats-ovl{position:fixed; inset:0; background:rgba(42,34,80,.5); display:none; align-items:center; justify-content:center; z-index:90;}
@@ -628,7 +630,22 @@ const LOOT = [
   ...["🦋","🐬","🦜","🌈","🚀","🎠","🍩","🧁","⛄","🪁"].map(e=>({e,r:"sjelden"})),
   ...["🦄","🐙","🦖","🛸","🪅","🧚","🎪","💎"].map(e=>({e,r:"episk"})),
   ...["🐲","🌟","🦕","🧜‍♀️","👑","✨"].map(e=>({e,r:"legendarisk"})),
+  // ✨ SERIE 2 – hemmelig samling: dukker først opp (kister, butikk, bok)
+  // når HELE serie 1 er samlet. Dobler samlingen for de som har "alt".
+  ...["🐞","🐹","🐰","🦔","🐣","🌻","🍒","🥨","🍿","🎀"].map(e=>({e,r:"vanlig",s:2})),
+  ...["🦩","🐳","🦥","🦦","🎡","🎢","🎯","🏆","🪩","🛝"].map(e=>({e,r:"sjelden",s:2})),
+  ...["🧞","🪄","🔮","🚁","🌠","🗿","🎆","🎨"].map(e=>({e,r:"episk",s:2})),
+  ...["👸","🪽","🫧","💫","🌺","🎇"].map(e=>({e,r:"legendarisk",s:2})),
 ];
+function lootSerie1(){ return LOOT.filter(x=>x.s!==2); }
+function lootSerie2(){ return LOOT.filter(x=>x.s===2); }
+function serie2Open(){ return lootSerie1().every(x=>SAVE.collection[x.e]); }
+function availableLoot(){ return serie2Open() ? LOOT : lootSerie1(); }
+function announceSerie2(){
+  confetti(80,true); sfx.fanfare();
+  toast("🔓✨ HEMMELIG SAMLING ÅPNET! "+lootSerie2().length+" nye skatter venter!");
+  speak("Fantastisk, "+SAVE.name+"! Du har samlet alt sammen! En hemmelig ny samling er åpnet!", {rate:0.95, interrupt:false});
+}
 const RAR_NAME = {vanlig:"Vanlig", sjelden:"Sjelden! 💙", episk:"EPISK! 💜", legendarisk:"⭐ LEGENDARISK! ⭐"};
 const RAR_WEIGHT = {vanlig:55, sjelden:28, episk:13, legendarisk:4};
 const SHOP_COST = {vanlig:6, sjelden:6, episk:12, legendarisk:20};
@@ -639,6 +656,10 @@ const SETS = [
   {navn:"Godte-gjengen 🍭", emojis:["🍓","🍌","🍪","🍭","🍩","🧁"], premie:15},
   {navn:"Magi-mester ✨", emojis:["🦄","🧚","🌈","🌟","🧜‍♀️","✨"], premie:25},
   {navn:"Eventyrfarer 🏰", emojis:["🚀","🛸","🦖","🦕","🐲","👑"], premie:25},
+  // Serie 2-sett: vises først når den hemmelige samlingen er åpnet
+  {navn:"Kosedyr-parade 🐾", emojis:["🐞","🐹","🐰","🦔","🐣","🦥"], premie:20, s:2},
+  {navn:"Tivoli-tur 🎡", emojis:["🎡","🎢","🛝","🎯","🏆","🪩"], premie:25, s:2},
+  {navn:"Stjernestøv 🌠", emojis:["🔮","🪄","🌠","💫","🫧","🪽"], premie:30, s:2},
 ];
 
 // ---------- BOSSER (flere låses opp med nivå!) ----------
@@ -906,12 +927,21 @@ function noteFirstTry(ok){
   if(SAVE.recent.length>10) SAVE.recent.shift();
 }
 function difficultyShift(){
-  if(SAVE.recent.length<5) return 0;
-  const rate=SAVE.recent.reduce((a,b)=>a+b,0)/SAVE.recent.length;
-  if(rate>0.8) return 1;   // hun mestrer – litt lengre ord
-  if(rate<0.4) return -1;  // strever – litt kortere ord
-  return 0;
+  // Nivå-gulv: lesenivået (måneder med fremgang) telte tidligere IKKE i
+  // vanskeligheten – bare siste 10 førsteforsøk, med tak på +1. Da fikk en
+  // mester fortsatt "-NØ, hva mangler?" i rom 2. Nå: nivå 5+ gir +1,
+  // nivå 9+ gir +2, og prestasjonen justerer ±1 rundt gulvet.
+  const floor=Math.min(2, Math.floor((levelOf(SAVE.xp)-1)/4));
+  let perf=0;
+  if(SAVE.recent.length>=5){
+    const rate=SAVE.recent.reduce((a,b)=>a+b,0)/SAVE.recent.length;
+    if(rate>0.8) perf=1;        // hun mestrer – litt lengre ord
+    else if(rate<0.4) perf=-1;  // strever – litt kortere ord
+  }
+  return Math.max(-1, floor+perf);
 }
+// Skalering av oppgavetypene (antall valg m.m.) følger samme nivå-trapp
+function levelStep(){ return Math.min(2, Math.floor((levelOf(SAVE.xp)-1)/4)); }
 
 // ---------- HJELPERE ----------
 const $=id=>document.getElementById(id);
@@ -1129,7 +1159,7 @@ function setupRoomUI(mode){
 
 // ---------- OPPGAVETYPER ----------
 // Minimale par for "velg": ord som ligner (HUS/MUS) trener fonembevissthet
-function similarWords(W){
+function similarWords(W, n=2){
   // In picture-to-word mode we avoid 2-letter words entirely.
   // Options should feel like whole words, not clipped fragments.
   const minLen=3;
@@ -1148,7 +1178,7 @@ function similarWords(W){
     }
     return [w,score+Math.random()];
   }).sort((a,b)=>b[1]-a[1]);
-  return [scored[0][0], scored[1][0]];
+  return scored.slice(0,n).map(x=>x[0]);
 }
 
 function buildChallenge(mode){
@@ -1162,7 +1192,9 @@ function buildChallenge(mode){
   if(mode==="velg"){
     $("instruction").textContent="Hvilket ord er riktig? 🤔";
     slots.style.display="none";
-    const choices=[W,...similarWords(W)].filter(word=>word.length>=3);
+    // Antall valg vokser med nivået: 3 → 4 (nivå 5+) → 5 (nivå 9+).
+    // Fast 3 ga 33 % rein gjettesjanse uansett hvor god hun var.
+    const choices=[W,...similarWords(W, 2+levelStep())].filter(word=>word.length>=3);
     shuffle(choices).forEach(word=>{
       const b=document.createElement("button"); b.className="wordbtn"; b.textContent=word;
       b.onclick=()=>{ resetIdle(); sfx.pop(); word===W ? solveWord() : miss(b, W[0]); };
@@ -1174,24 +1206,31 @@ function buildChallenge(mode){
   slots.style.display="flex";
   const letters=W.split("");
   if(mode==="mangler"){
-    $("instruction").textContent="Hvilken bokstav mangler? 🔍";
-    const hideIdx=Math.floor(Math.random()*letters.length);
+    // Nivå 5+: skjul TO bokstaver (ord på 4+). Én skjult av tre valg var
+    // 33 % gjettesjanse uansett nivå.
+    const hideN = (levelStep()>=1 && W.length>=4) ? 2 : 1;
+    $("instruction").textContent = hideN>1 ? "Hvilke bokstaver mangler? 🔍" : "Hvilken bokstav mangler? 🔍";
+    const hideIdxs=shuffle(letters.map((_,i)=>i)).slice(0,hideN);
     letters.forEach((L,i)=>{
       const s=document.createElement("div"); s.className="slot";
-      if(i!==hideIdx){ s.classList.add("filled","locked"); s.textContent=L; }
+      if(!hideIdxs.includes(i)){ s.classList.add("filled","locked"); s.textContent=L; }
       else s.dataset.want=L;
       slots.appendChild(s);
     });
-    const want=letters[hideIdx];
-    const d1=smartDecoy(want, W.split("")), d2=smartDecoy(want, W.split("").concat([d1]));
-    shuffle([want,d1,d2]).forEach(L=>{
+    const wants=hideIdxs.map(i=>letters[i]);
+    const decoys=[];
+    while(decoys.length<2) decoys.push(smartDecoy(pick(wants), W.split("").concat(decoys)));
+    shuffle([...wants,...decoys]).forEach(L=>{
       const b=document.createElement("button"); b.className="tile"; b.textContent=L;
       b.onclick=()=>{
         resetIdle(); sfx.pop();
-        if(L===want){
-          const s=slots.querySelector("[data-want]"); s.textContent=L; s.classList.add("filled");
-          b.classList.add("used"); solveWord();
-        } else miss(b, want);
+        // Fyll første tomme rute som venter på akkurat denne bokstaven
+        const target=[...slots.querySelectorAll(".slot")].find(s=>!s.classList.contains("filled") && s.dataset.want===L);
+        if(target){
+          target.textContent=L; target.classList.add("filled");
+          b.classList.add("used");
+          if(![...slots.querySelectorAll(".slot")].some(s=>!s.classList.contains("filled"))) solveWord();
+        } else miss(b, nextNeededLetter());
       };
       tiles.appendChild(b);
     });
@@ -1324,7 +1363,7 @@ function solveWord(){
   run.solved++; SAVE.wordsSolved++;
   statFor(currentWord.w).klart++;
   noteFirstTry(currentWord.firstTry);
-  let xp=5;
+  let xp=3+Math.min(7,currentWord.w.length); // lengre ord = mer XP (2 bokst.: 5, 7 bokst.: 10)
   if(currentWord.firstTry){
     xp+=3;
     run.streak++;
@@ -1406,7 +1445,9 @@ function bossNextWord(){
   const pool=practicePool().filter(w=>!run.usedWords.has(w) && w.length<=5);
   if(pool.length && Math.random()<0.6) entry=findWordEntry(pick(pool));
   if(!entry){
-    const L=pick([4,5]), w=pick(WORDS[L]);
+    // Høyt nivå/mestring: alltid 5 bokstaver (5 er taket for boss-layouten)
+    const L = difficultyShift()>=1 ? 5 : pick([4,5]);
+    const w=pick(WORDS[L]);
     entry={w:w[0], e:w[1]};
   }
   run.usedWords.add(entry.w);
@@ -1477,13 +1518,13 @@ function rollLoot(kind, boost=0){
   const pity = SAVE.sinceLeg>=11;
   if(kind==="boss" || pity){
     const legend = pity || Math.random()<0.3;
-    const items=LOOT.filter(x=> legend ? x.r==="legendarisk" : x.r==="episk");
+    const items=availableLoot().filter(x=> legend ? x.r==="legendarisk" : x.r==="episk");
     const item=pick(items);
     if(item.r==="legendarisk") SAVE.sinceLeg=0; else SAVE.sinceLeg++;
     return item;
   }
   let table=[];
-  for(const item of LOOT){
+  for(const item of availableLoot()){
     let w=RAR_WEIGHT[item.r];
     if(boost>0){
       if(item.r==="episk") w+=boost*2;
@@ -1493,7 +1534,7 @@ function rollLoot(kind, boost=0){
     table.push([item,w]);
   }
   let sum=table.reduce((a,[,w])=>a+w,0), r=Math.random()*sum;
-  let chosen=LOOT[0];
+  let chosen=table[0][0];
   for(const [item,w] of table){ r-=w; if(r<=0){ chosen=item; break; } }
   if(chosen.r==="legendarisk") SAVE.sinceLeg=0; else SAVE.sinceLeg++;
   return chosen;
@@ -1559,6 +1600,7 @@ function openChest(){
   const ln=$("loot-name");
   ln.textContent=RAR_NAME[chestLoot.r];
   ln.className="rar-"+chestLoot.r;
+  const hadAll=serie2Open(); // før vi legger til: var serie 2 allerede åpen?
   const dup=!!SAVE.collection[chestLoot.e];
   if(dup){
     run && (run.coinsWon+=2); // i reisesekken – bankes ved reisens slutt
@@ -1571,6 +1613,7 @@ function openChest(){
   SAVE.collection[chestLoot.e]=(SAVE.collection[chestLoot.e]||0)+1;
   persist();
   updateNyBadges();
+  if(!hadAll && serie2Open()) announceSerie2();
   const big = chestLoot.r==="episk"||chestLoot.r==="legendarisk";
   confetti(big?60:25, big);
   if(big) sfx.fanfare();
@@ -1665,6 +1708,7 @@ function showBook(){
   // Samle-sett
   const sw=$("sets-wrap"); sw.innerHTML="";
   SETS.forEach((set,si)=>{
+    if(set.s===2 && !serie2Open()) return; // hemmelige sett røpes ikke
     const have=set.emojis.filter(e=>SAVE.collection[e]).length;
     const card=document.createElement("div"); card.className="set-card";
     const claimed=SAVE.setsClaimed[si];
@@ -1694,7 +1738,7 @@ function showBook(){
   const g=$("book-grid"); g.innerHTML="";
   let owned=0;
   const order=["legendarisk","episk","sjelden","vanlig"];
-  [...LOOT].sort((a,b)=>order.indexOf(a.r)-order.indexOf(b.r)).forEach(item=>{
+  [...availableLoot()].sort((a,b)=>order.indexOf(a.r)-order.indexOf(b.r)).forEach(item=>{
     const c=document.createElement("div");
     const n=SAVE.collection[item.e]||0;
     const isNew = n && SAVE.newInBook && SAVE.newInBook[item.e];
@@ -1715,7 +1759,14 @@ function showBook(){
     }; }
     g.appendChild(c);
   });
-  $("book-progress").textContent = owned+" / "+LOOT.length;
+  // 🔒 Teaser for den hemmelige samlingen til den er åpnet
+  if(!serie2Open()){
+    const t=document.createElement("div");
+    t.className="serie2-teaser";
+    t.innerHTML="🔒✨ <b>Hemmelig samling!</b><br>Samle alle "+lootSerie1().length+" skattene, så åpnes "+lootSerie2().length+" splitter nye!";
+    g.appendChild(t);
+  }
+  $("book-progress").textContent = owned+" / "+availableLoot().length;
   updateNyBadges();
 }
 // ✨-teller på EMOJIBOKA-knappene (start- og sluttskjerm)
@@ -1731,7 +1782,7 @@ function updateNyBadges(){
 function openShop(){
   $("shop-coins").textContent=SAVE.coins;
   const g=$("shop-grid"); g.innerHTML="";
-  const locked=LOOT.filter(x=>!SAVE.collection[x.e]);
+  const locked=availableLoot().filter(x=>!SAVE.collection[x.e]);
   if(!locked.length){ g.innerHTML="<div style='grid-column:1/-1;font-weight:700'>Du har ALT! 🤩</div>"; }
   locked.forEach(item=>{
     const cost=SHOP_COST[item.r];
@@ -1739,6 +1790,7 @@ function openShop(){
     b.innerHTML=item.e+"<small>"+cost+" 🪙</small>";
     b.disabled = SAVE.coins<cost;
     b.onclick=()=>{
+      const hadAll=serie2Open();
       SAVE.coins-=cost;
       SAVE.collection[item.e]=1;
       (SAVE.newInBook=SAVE.newInBook||{})[item.e]=true; // ✨ skinner i boka til den er sett
@@ -1747,6 +1799,7 @@ function openShop(){
       persist();
       $("shop-ovl").classList.remove("on");
       showBook();
+      if(!hadAll && serie2Open()) announceSerie2();
     };
     g.appendChild(b);
   });
@@ -1766,7 +1819,7 @@ function renderStartStats(){
   $("xp-fill").style.width=pct+"%";
   updateNyBadges();
   $("start-stats").innerHTML =
-    '<div class="pill">📖 '+owned+'/'+LOOT.length+'</div>'+
+    '<div class="pill">📖 '+owned+'/'+availableLoot().length+'</div>'+
     '<div class="pill">🔥 '+SAVE.bestStreak+'</div>'+
     '<div class="pill">📚 '+SAVE.wordsSolved+'</div>'+
     '<div class="pill">👾 '+(SAVE.bossesBeaten||0)+'</div>'+
