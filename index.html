@@ -100,6 +100,13 @@
   .slot.say{background:#FFF3C9!important; border-color:var(--sol)!important; transform:scale(1.18);}
   @keyframes slotpop{from{transform:scale(.6)}to{transform:scale(1)}}
 
+  /* Lange ord (6–7 bokstaver): slot-raden brekker ALDRI, så rutene må være
+     smale nok til at hele ordet står på én linje selv på telefon. */
+  #slots.long{gap:6px; padding:8px;}
+  #slots.long .slot{width:42px; height:50px; font-size:24px; border-radius:12px;}
+  #tiles.long{gap:8px;}
+  #tiles.long .tile{width:54px; height:60px; font-size:28px; border-radius:14px;}
+
   #tiles{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:6px; max-width:440px;}
   .tile{
     width:72px; height:76px; border-radius:20px; background:var(--tile-bg); border:none; cursor:pointer;
@@ -300,7 +307,7 @@
   #heart-count{min-width:1.2em; display:inline-block; text-align:center;}
   .heart-hit{animation:heartHit .45s ease;}
   @keyframes heartHit{0%,100%{transform:scale(1)}35%{transform:scale(1.35) rotate(-8deg); filter:brightness(1.4)}}
-  #big-emoji{width:clamp(108px,22vw,190px); height:clamp(108px,22vw,190px); margin:6px 0 0; border-radius:50%;
+  #big-emoji{cursor:pointer; width:clamp(108px,22vw,190px); height:clamp(108px,22vw,190px); margin:6px 0 0; border-radius:50%;
     background:rgba(255,255,255,.64); border:4px solid rgba(255,255,255,.75); box-shadow:0 10px 22px rgba(42,34,80,.12), inset 0 -8px 0 rgba(255,255,255,.3);
   }
   .helper-row{background:rgba(255,255,255,.45); border-radius:999px; padding:6px 10px; box-shadow:0 5px 16px rgba(42,34,80,.08);}
@@ -345,6 +352,9 @@
     .slot{width:86px; height:94px; font-size:52px; border-radius:24px;}
     #tiles{max-width:640px; gap:16px;}
     #slots{gap:14px;}
+    #slots.long{gap:10px;}
+    #slots.long .slot{width:68px; height:76px; font-size:38px;}
+    #tiles.long .tile{width:78px; height:84px; font-size:42px;}
     #big-emoji{font-size:150px;}
     #instruction{font-size:26px;}
     #feedback{font-size:28px; min-height:40px;}
@@ -379,6 +389,8 @@
     #slots{margin:6px 0; min-height:0;}
     .tile{width:82px; height:86px; font-size:44px;}
     .slot{width:74px; height:80px; font-size:44px;}
+    #slots.long .slot{width:60px; height:68px; font-size:34px;}
+    #tiles.long .tile{width:64px; height:70px; font-size:34px;}
     #feedback{margin-top:4px;}
     #boss-emoji{font-size:90px;}
     .boss-mode #big-emoji{font-size:56px;}
@@ -475,7 +487,8 @@
     <div id="boss-name"></div>
     <div id="boss-hp"></div>
   </div>
-  <div id="big-emoji">☀️</div>
+  <!-- Trykk på bildet = samme hjelp som ugla: lyder ordet bokstav for bokstav -->
+  <div id="big-emoji" onclick="soundOutWord()" title="Lyder ordet">☀️</div>
   <div class="helper-row">
     <button class="roundbtn" onclick="speakWord()" title="Hør ordet">🔊</button>
     <button class="roundbtn" onclick="soundOutWord()" title="Vis ordet sakte">🦉</button>
@@ -552,12 +565,32 @@
    ========================================================= */
 
 // ---------- ORD ----------
+// Hvert ord MÅ ha en entydig emoji (bildet er hele hintet). Unngå to ord
+// med samme/nesten samme emoji: i velg-modus kan begge dukke opp som
+// svaralternativ til samme bilde. 6–7-bokstavsord finnes kun her oppe i
+// lengde – de nås via mestring (difficultyShift) og Lynstien.
 const WORDS = {
-  2:[["IS","🍦"],["KU","🐮"],["BI","🐝"],["ØY","🏝️"],["TE","🍵"]],
-  3:[["SOL","☀️"],["HUS","🏠"],["BIL","🚗"],["BOK","📖"],["EGG","🥚"],["MUS","🐭"],["SKO","👟"],["APE","🐒"],["TRE","🌳"],["BÅT","⛵"],["FLY","✈️"],["REV","🦊"],["ULV","🐺"],["SAU","🐑"],["OST","🧀"],["SEL","🦭"],["SNØ","❄️"],["TOG","🚂"],["ØRN","🦅"],["HAI","🦈"]],
-  4:[["KATT","🐱"],["HUND","🐶"],["FISK","🐟"],["EPLE","🍎"],["HATT","🎩"],["LØVE","🦁"],["SOPP","🍄"],["BALL","⚽"],["KAKE","🍰"],["STOL","🪑"],["MELK","🥛"],["BUSS","🚌"],["MÅNE","🌙"],["GRIS","🐷"],["UGLE","🦉"],["REGN","🌧️"],["VANN","💧"],["BRØD","🍞"],["ROSE","🌹"]],
-  5:[["BJØRN","🐻"],["TIGER","🐯"],["DRAGE","🐉"],["PIZZA","🍕"],["ROBOT","🤖"],["KRONE","👑"],["PANDA","🐼"],["KOALA","🐨"],["SEBRA","🦓"],["LAMPE","💡"],["FROSK","🐸"],["SLOTT","🏰"],["KLOVN","🤡"]]
+  2:[["IS","🍦"],["KU","🐮"],["BI","🐝"],["ØY","🏝️"],["TE","🍵"],["DO","🚽"],["UR","⌚"],["TV","📺"],["BY","🏙️"]],
+  3:[["SOL","☀️"],["HUS","🏠"],["BIL","🚗"],["BOK","📖"],["EGG","🥚"],["MUS","🐭"],["SKO","👟"],["APE","🐒"],["TRE","🌳"],["BÅT","⛵"],["FLY","✈️"],["REV","🦊"],["ULV","🐺"],["SAU","🐑"],["OST","🧀"],["SEL","🦭"],["SNØ","❄️"],["TOG","🚂"],["ØRN","🦅"],["HAI","🦈"],
+     ["AND","🦆"],["HAV","🌊"],["LYN","⚡"],["BÅL","🔥"],["RIS","🍚"],["ØYE","👁️"],["ØRE","👂"],["FOT","🦶"],["ARM","💪"],["SAG","🪚"],["LYS","🕯️"],["SKY","☁️"],["ORM","🪱"]],
+  4:[["KATT","🐱"],["HUND","🐶"],["FISK","🐟"],["EPLE","🍎"],["HATT","🎩"],["LØVE","🦁"],["SOPP","🍄"],["BALL","⚽"],["KAKE","🍰"],["STOL","🪑"],["MELK","🥛"],["BUSS","🚌"],["MÅNE","🌙"],["GRIS","🐷"],["UGLE","🦉"],["REGN","🌧️"],["VANN","💧"],["BRØD","🍞"],["ROSE","🌹"],
+     ["HEST","🐴"],["GEIT","🐐"],["HØNE","🐔"],["HVAL","🐋"],["FUGL","🐦"],["MAUR","🐜"],["MYGG","🦟"],["FLUE","🪰"],["ØGLE","🦎"],["REKE","🦐"],["DRUE","🍇"],["PÆRE","🍐"],["MAIS","🌽"],["KIWI","🥝"],["TACO","🌮"],["SAFT","🧃"],["BRUS","🥤"],["SMØR","🧈"],["NØTT","🥜"],
+     ["SAKS","✂️"],["SÅPE","🧼"],["SENG","🛏️"],["DUSJ","🚿"],["TELT","⛺"],["SKIP","🚢"],["RING","💍"],["SOKK","🧦"],["TANN","🦷"],["NESE","👃"],["MUNN","👄"],["HÅND","✋"],["BABY","👶"],["KOST","🧹"]],
+  5:[["BJØRN","🐻"],["TIGER","🐯"],["DRAGE","🐉"],["PIZZA","🍕"],["ROBOT","🤖"],["KRONE","👑"],["PANDA","🐼"],["KOALA","🐨"],["SEBRA","🦓"],["LAMPE","💡"],["FROSK","🐸"],["SLOTT","🏰"],["KLOVN","🤡"],
+     ["BANAN","🍌"],["TOMAT","🍅"],["MELON","🍉"],["AGURK","🥒"],["POTET","🥔"],["PØLSE","🌭"],["SUPPE","🍲"],["SALAT","🥗"],
+     ["SVANE","🦢"],["SNEGL","🐌"],["LARVE","🐛"],["BILLE","🪲"],["KAMEL","🐫"],["EKORN","🐿️"],
+     ["HYTTE","🛖"],["KIRKE","⛪"],["SKOLE","🏫"],["FJELL","⛰️"],["SPEIL","🪞"],["GITAR","🎸"],["PIANO","🎹"],
+     ["JAKKE","🧥"],["KJOLE","👗"],["BUKSE","👖"],["MOBIL","📱"],["BØTTE","🪣"],["SVAMP","🧽"],["STIGE","🪜"],
+     ["KONGE","🤴"],["NISSE","🎅"],["ENGEL","👼"],["FLAGG","🚩"]],
+  6:[["SYKKEL","🚲"],["SITRON","🍋"],["ANANAS","🍍"],["GULROT","🥕"],["VAFFEL","🧇"],
+     ["KRABBE","🦀"],["SLANGE","🐍"],["PÅFUGL","🦚"],["DELFIN","🐬"],
+     ["HJERTE","❤️"],["KLOKKE","⏰"],["NØKKEL","🔑"],["TROMME","🥁"],["FIOLIN","🎻"],["HAMMER","🔨"],["PENSEL","🖌️"],
+     ["STRAND","🏖️"],["VULKAN","🌋"],["PLANET","🪐"],["BLOMST","🌷"],["RAKETT","🚀"],
+     ["SKJERF","🧣"],["HANSKE","🧤"],["STØVEL","👢"],["KAMERA","📷"],["TENNIS","🎾"],["BLYANT","✏️"]],
+  7:[["ELEFANT","🐘"],["SJIRAFF","🦒"],["PINGVIN","🐧"],["ISBJØRN","🐻‍❄️"],["LEOPARD","🐆"],["KYLLING","🐥"],
+     ["TRAKTOR","🚜"],["BALLONG","🎈"],["REGNBUE","🌈"]]
 };
+const WORD_MAX = Math.max(...Object.keys(WORDS).map(Number));
 const ALL_LETTERS = "ABDEFGHIJKLMNOPRSTUVYÆØÅ".split("");
 
 // Bokstavlyd for uglehjelpen. KUN én bokstav per verdi: strukne stavinger
@@ -1042,7 +1075,9 @@ function wordForRoom(r, mode="stav"){
   else if(r<=4) lens=[3,4];
   else lens=[4,5];
   const shift=difficultyShift() + (run.brave>0 ? 1 : 0); // ⚡ Lynstien: litt lengre ord
-  lens=[...new Set(lens.map(L=>Math.max(minLen,Math.min(5,L+shift))))].filter(L=>WORDS[L] && WORDS[L].length);
+  // 6–7-bokstavsord nås kun med positivt shift (mestring og/eller Lynstien),
+  // så grunnvanskeligheten er uendret selv om listene går til WORD_MAX.
+  lens=[...new Set(lens.map(L=>Math.max(minLen,Math.min(WORD_MAX,L+shift))))].filter(L=>WORDS[L] && WORDS[L].length);
   for(let t=0;t<40;t++){
     const L=pick(lens), w=pick(WORDS[L]);
     if(!run.usedWords.has(w[0])){ run.usedWords.add(w[0]); return {w:w[0], e:w[1]}; }
@@ -1108,6 +1143,9 @@ function buildChallenge(mode){
   const slots=$("slots"), tiles=$("tiles");
   slots.innerHTML=""; tiles.innerHTML="";
   const W=currentWord.w;
+  // Slot-raden brekker ikke: 6–7-bokstavsord trenger mindre ruter/fliser
+  slots.classList.toggle("long", W.length>=6);
+  tiles.classList.toggle("long", W.length>=6);
 
   if(mode==="velg"){
     $("instruction").textContent="Hvilket ord er riktig? 🤔";
@@ -1351,7 +1389,9 @@ function renderBossHP(){
 }
 function bossNextWord(){
   let entry=null;
-  const pool=practicePool().filter(w=>!run.usedWords.has(w));
+  // Maks 5 bokstaver i boss-kamp: kompakt boss-layout er trimmet for inntil
+  // 6 fliser, så lengre øvingsord ville sprengt skjermen.
+  const pool=practicePool().filter(w=>!run.usedWords.has(w) && w.length<=5);
   if(pool.length && Math.random()<0.6) entry=findWordEntry(pick(pool));
   if(!entry){
     const L=pick([4,5]), w=pick(WORDS[L]);
