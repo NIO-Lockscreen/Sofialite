@@ -171,7 +171,10 @@
   @keyframes bossdead{to{transform:translateY(60px) rotate(180deg) scale(.2); opacity:0;}}
   #boss-name{font-weight:700; font-size:20px; color:var(--drue);}
   #boss-hp{font-size:24px; letter-spacing:3px;}
-  .boss-mode #big-emoji{font-size:64px; margin:0;}
+  /* Krymp selve sirkelen, ikke bare fonten: polish-regelen gir #big-emoji
+     opptil 190px høyde på iPad, og det dyttet stave-raden ut av skjermen
+     i boss-modus. */
+  .boss-mode #big-emoji{font-size:64px; margin:0; height:clamp(72px,13vh,140px); width:auto; aspect-ratio:1;}
   /* Kompakt boss-modus: lange ord (5 bokstaver + lurebokstav = 6 fliser)
      må få plass på skjermen sammen med bossen. */
   .boss-mode #boss-emoji{font-size:72px;}
@@ -304,6 +307,11 @@
   #instruction{background:rgba(255,255,255,.78); border:3px solid rgba(255,255,255,.85); border-radius:999px; padding:8px 18px; box-shadow:0 4px 0 rgba(42,34,80,.09);}
   #slots{background:rgba(255,255,255,.38); border:3px solid rgba(255,255,255,.55); border-radius:28px; padding:10px; box-shadow:0 10px 22px rgba(42,34,80,.08);}
   #tiles{width:min(96vw,650px); min-height:110px; background:rgba(255,255,255,.48); border:3px solid rgba(255,255,255,.62); border-radius:30px; padding:14px; box-shadow:0 12px 26px rgba(42,34,80,.1);}
+  /* Stave-UI får ALDRI krympe: når flex-kolonnen er høyere enn skjermen
+     klemte den #slots (min-height:0 i boss-modus) mot null høyde, så
+     svarrutene forsvant og valgte bokstaver la seg oppå flisene (iPad).
+     Overskudd tas i stedet av #big-emoji, som kan krympe. */
+  #slots,#tiles,.helper-row,#instruction{flex-shrink:0;}
   #feedback{min-width:min(92vw,450px); background:rgba(255,255,255,.75); border-radius:20px; padding:8px 16px; box-shadow:0 5px 0 rgba(42,34,80,.08);}
   .slot.wrongflash{animation:wrongflash .55s ease;}
   @keyframes wrongflash{0%,100%{background:rgba(255,255,255,.55)}35%{background:#ffe0e5; border-color:#ff6f82; transform:scale(1.08)}}
@@ -324,6 +332,12 @@
   @media (max-width:420px){
     .tile{width:60px;height:66px;font-size:34px;} .slot{width:52px;height:60px;font-size:32px;}
     #big-emoji{font-size:92px;} #logo{font-size:42px;}
+    /* Boss-modus på telefon: 6 fliser bretter til to rader, så resten av
+       stabelen må være ekstra kompakt for å unngå klipp i bunnen. */
+    .boss-mode #big-emoji{width:76px; height:76px; aspect-ratio:auto; font-size:44px;}
+    .boss-mode #boss-emoji{font-size:56px;}
+    .boss-mode .tile{width:56px; height:60px; font-size:30px;}
+    .boss-mode .slot{width:48px; height:54px; font-size:28px;}
   }
   /* ---------- iPad: større trykkeflater ---------- */
   @media (min-width:700px) and (min-height:700px){
@@ -368,6 +382,19 @@
     #feedback{margin-top:4px;}
     #boss-emoji{font-size:90px;}
     .boss-mode #big-emoji{font-size:56px;}
+    /* Boss-modus i liggende: hele stabelen (boss + emoji + rader + ruter +
+       fliser) er høyere enn ~690px synlig høyde uten disse. */
+    .boss-mode #boss-emoji{font-size:64px;}
+    .boss-mode #boss-name{font-size:18px;} .boss-mode #boss-hp{font-size:20px;}
+    .boss-mode #boss-bar{padding:4px 16px;}
+    .boss-mode .tile{width:72px; height:76px; font-size:40px;}
+    .boss-mode .slot{width:64px; height:70px; font-size:38px;}
+    /* 6 fliser på ÉN rad: 480px-taket tvang fram to rader, som igjen
+       gjorde stabelen for høy. */
+    .boss-mode #tiles{max-width:540px;}
+    .boss-mode .roundbtn{width:54px; height:54px; font-size:26px;}
+    .boss-mode #instruction{font-size:19px;}
+    .boss-mode #feedback{min-height:22px; font-size:17px;}
   }
   @media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important;} }
 </style>
