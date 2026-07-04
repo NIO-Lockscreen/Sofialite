@@ -215,6 +215,17 @@
   .book-cell.locked{background:rgba(255,255,255,.4); filter:grayscale(1); opacity:.55; font-size:30px;}
   .book-cell .cnt{position:absolute; bottom:4px; right:6px; font-size:12px; font-weight:700; color:#999;}
   .book-cell.rar-episk{outline:3px solid var(--drue);} .book-cell.rar-legendarisk{outline:3px solid var(--sol); box-shadow:0 4px 0 var(--skygge),0 0 16px #ffd97088;}
+  /* ✨ NY-glans: nylig opplåste/kjøpte emojier skinner til de trykkes på */
+  .book-cell.shiny{overflow:hidden; box-shadow:0 4px 0 var(--skygge), 0 0 20px #ffd970aa; animation:nyglow 1.8s ease-in-out infinite;}
+  .book-cell.shiny::after{content:""; position:absolute; top:-60%; bottom:-60%; left:-90%; width:55%; pointer-events:none;
+    background:linear-gradient(105deg, transparent 0%, rgba(255,255,255,.95) 50%, transparent 100%);
+    transform:rotate(18deg); animation:nysweep 2.2s ease-in-out infinite;}
+  @keyframes nysweep{0%,55%{left:-90%}100%{left:170%}}
+  @keyframes nyglow{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  .book-cell .ny-badge{position:absolute; top:3px; left:3px; background:linear-gradient(90deg,var(--sol),var(--rosa)); color:#fff;
+    font-size:11px; font-weight:700; padding:2px 7px; border-radius:999px; box-shadow:0 2px 0 rgba(42,34,80,.2); z-index:1;}
+  /* ✨-teller på EMOJIBOKA-knappene når noe nytt venter */
+  .nybadge{display:none; background:#fff; color:var(--drue); border-radius:999px; padding:2px 12px; font-size:17px; animation:pump 1.4s ease-in-out infinite;}
   #book-bottom{position:fixed; bottom:calc(14px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); display:flex; gap:10px;}
 
   /* ---------- BUTIKK (myntbruk) ---------- */
@@ -426,7 +437,7 @@
   </div>
   <div class="startstats" id="start-stats"></div>
   <button class="bigbtn" onclick="startRun()">🚀 START REISEN</button>
-  <button class="bigbtn drue" onclick="showBook()">📖 EMOJIBOKA MI</button>
+  <button class="bigbtn drue" onclick="showBook()">📖 EMOJIBOKA MI <span class="nybadge"></span></button>
   <div class="toggle-row" style="width:min(80vw,290px); font-size:16px">
     <span>🗺️ Veivalg på reisen</span>
     <input type="checkbox" id="veivalg-toggle" checked onchange="toggleVeivalg(this.checked)">
@@ -517,7 +528,7 @@
   <div id="end-stats"></div>
   <div id="end-lesson"></div>
   <button class="bigbtn" onclick="startRun()">🔁 NY REISE</button>
-  <button class="bigbtn drue" onclick="showBook()">📖 EMOJIBOKA</button>
+  <button class="bigbtn drue" onclick="showBook()">📖 EMOJIBOKA <span class="nybadge"></span></button>
   <button class="bigbtn sky" onclick="goHome()">🏠 HJEM</button>
 </div>
 
@@ -654,7 +665,8 @@ const THEMES = [
 function freshSave(){
   return {name:"Sofia", collection:{}, coins:0, totalStars:0, bestStreak:0, runs:0, wordsSolved:0,
     bossesBeaten:0, wordStats:{}, letterStats:{}, xp:0, chests:0, sinceLeg:0, recent:[],
-    lowerUnlocked:false, lowerOn:false, theme:"standard", setsClaimed:{}, comebackHeart:false, veivalg:true};
+    lowerUnlocked:false, lowerOn:false, theme:"standard", setsClaimed:{}, comebackHeart:false, veivalg:true,
+    newInBook:{}}; // ✨ nylig opplåste/kjøpte emojier som skinner i boka til de er sett
 }
 let SAVE = freshSave();
 async function loadSave(){
@@ -1554,9 +1566,11 @@ function openChest(){
     $("chest-hint").textContent="Du har den fra før → +2 🪙 mynter!";
   } else {
     $("chest-hint").textContent="NY i emojiboka di! 📖";
+    (SAVE.newInBook=SAVE.newInBook||{})[chestLoot.e]=true; // ✨ skinner i boka til den er sett
   }
   SAVE.collection[chestLoot.e]=(SAVE.collection[chestLoot.e]||0)+1;
   persist();
+  updateNyBadges();
   const big = chestLoot.r==="episk"||chestLoot.r==="legendarisk";
   confetti(big?60:25, big);
   if(big) sfx.fanfare();
@@ -1683,13 +1697,34 @@ function showBook(){
   [...LOOT].sort((a,b)=>order.indexOf(a.r)-order.indexOf(b.r)).forEach(item=>{
     const c=document.createElement("div");
     const n=SAVE.collection[item.e]||0;
-    c.className="book-cell"+(n? " rar-"+item.r : " locked");
+    const isNew = n && SAVE.newInBook && SAVE.newInBook[item.e];
+    c.className="book-cell"+(n? " rar-"+item.r : " locked")+(isNew? " shiny" : "");
     c.textContent = n ? item.e : "❓";
     if(n>1){ const s=document.createElement("div"); s.className="cnt"; s.textContent="×"+n; c.appendChild(s); }
-    if(n){ owned++; c.onclick=()=>{ sfx.pop(); toast(item.e+" "+RAR_NAME[item.r]); }; }
+    if(isNew){ const nb=document.createElement("div"); nb.className="ny-badge"; nb.textContent="NY!"; c.appendChild(nb); }
+    if(n){ owned++; c.onclick=()=>{
+      // ✨ Første trykk på en ny emoji "kvitterer": glansen forsvinner med et lite show
+      if(SAVE.newInBook && SAVE.newInBook[item.e]){
+        delete SAVE.newInBook[item.e];
+        c.classList.remove("shiny");
+        const nb=c.querySelector(".ny-badge"); if(nb) nb.remove();
+        sfx.star(); flyStar(c,"✨");
+        persist(); updateNyBadges();
+      } else sfx.pop();
+      toast(item.e+" "+RAR_NAME[item.r]);
+    }; }
     g.appendChild(c);
   });
   $("book-progress").textContent = owned+" / "+LOOT.length;
+  updateNyBadges();
+}
+// ✨-teller på EMOJIBOKA-knappene (start- og sluttskjerm)
+function updateNyBadges(){
+  const n=Object.keys(SAVE.newInBook||{}).length;
+  document.querySelectorAll(".nybadge").forEach(b=>{
+    b.style.display = n ? "inline-block" : "none";
+    b.textContent = "✨ "+n;
+  });
 }
 
 // ---------- BUTIKK: bruk mynter, VELG en skatt (valgfrihet = belønning) ----------
@@ -1706,6 +1741,7 @@ function openShop(){
     b.onclick=()=>{
       SAVE.coins-=cost;
       SAVE.collection[item.e]=1;
+      (SAVE.newInBook=SAVE.newInBook||{})[item.e]=true; // ✨ skinner i boka til den er sett
       sfx.fanfare(); confetti(40, item.r==="episk"||item.r==="legendarisk");
       toast("Du valgte "+item.e+"! "+RAR_NAME[item.r]);
       persist();
@@ -1728,6 +1764,7 @@ function renderStartStats(){
   const pct = Math.min(100, (SAVE.xp-prev)/(xpNeed(lvl)-prev)*100);
   $("xp-label").textContent="🎓 Lesenivå "+lvl;
   $("xp-fill").style.width=pct+"%";
+  updateNyBadges();
   $("start-stats").innerHTML =
     '<div class="pill">📖 '+owned+'/'+LOOT.length+'</div>'+
     '<div class="pill">🔥 '+SAVE.bestStreak+'</div>'+
