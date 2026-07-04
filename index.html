@@ -659,8 +659,25 @@ function levelPerks(lvl){
 }
 
 // ---------- LYD ----------
-let AC=null;
-function ac(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return AC; }
+let AC=null, MASTER=null;
+function ac(){
+  if(!AC){
+    try{
+      AC=new (window.AudioContext||window.webkitAudioContext)();
+      // Kompressor som mykt tak: oscillatorene gikk rett i destination, og
+      // når flere toner overlappet (fanfare/kiste/akkord) klippet summen på
+      // iPad-høyttaleren → knitring og "billig" lyd.
+      MASTER=AC.createDynamicsCompressor();
+      MASTER.threshold.value=-18; MASTER.knee.value=24; MASTER.ratio.value=6;
+      MASTER.attack.value=0.003; MASTER.release.value=0.25;
+      MASTER.connect(AC.destination);
+    }catch(e){}
+  }
+  // iOS suspenderer konteksten ved rutebytte/bakgrunn; gjenoppta ellers
+  // kommer tonene forvrengt eller ikke i det hele tatt.
+  if(AC && AC.state==="suspended"){ try{AC.resume();}catch(e){} }
+  return AC;
+}
 function tone(f, t0, dur, type="sine", vol=0.18){
   const c=ac(); if(!c) return;
   const o=c.createOscillator(), g=c.createGain();
@@ -668,7 +685,10 @@ function tone(f, t0, dur, type="sine", vol=0.18){
   g.gain.setValueAtTime(0, c.currentTime+t0);
   g.gain.linearRampToValueAtTime(vol, c.currentTime+t0+0.015);
   g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+t0+dur);
-  o.connect(g); g.connect(c.destination);
+  // Helt til null før oscillatoren stopper: å stoppe på 0.001 ga et lite
+  // klikk per tone – hørbart som knitring i raske sekvenser.
+  g.gain.linearRampToValueAtTime(0, c.currentTime+t0+dur+0.04);
+  o.connect(g); g.connect(MASTER||c.destination);
   o.start(c.currentTime+t0); o.stop(c.currentTime+t0+dur+0.05);
 }
 // Pentaton tonestige – hver bokstav i ordet klatrer høyere 🎵
@@ -1036,6 +1056,10 @@ function nextRoom(){
   if(run.room>ROOMS){ startBoss(); return; }
   let mode;
   if(run.room<=1) mode="velg";
+  // ⚡ Lynstien: ordlistene stopper på 5 bokstaver, så "+1 lengde" alene ga
+  // ofte NØYAKTIG samme ord som vanlig sti. Gjør rommene reelt vanskeligere:
+  // aldri lette romtyper (velg/mangler) – kun full staving eller lytting.
+  else if(run.brave>0) mode=pick(["stav","stav","lytt"]);
   else if(run.room<=3) mode=pick(["mangler","stav"]);
   else mode=pick(["stav","stav","lytt"]);
   currentWord = wordForRoom(run.room, mode);
@@ -1129,6 +1153,7 @@ function buildChallenge(mode){
   letters.forEach(()=>{ const s=document.createElement("div"); s.className="slot"; slots.appendChild(s); });
   let pool=[...letters];
   if(W.length>=4) pool.push(smartDecoy(pick(letters), letters)); // smart lurebokstav
+  if(currentWord.brave) pool.push(smartDecoy(pick(letters), pool)); // ⚡ Lynstien: én ekstra lurebokstav
   let idx=0;
   const shuffled=shuffle(pool);
   // ✨ Gyllen bokstav (8 %, 30 % med Gull-magneten): en riktig bokstav skinner – gir mynter!
@@ -1758,12 +1783,12 @@ $("settings-ovl").addEventListener("click", e=>{ if(e.target.id==="settings-ovl"
 $("shop-ovl").addEventListener("click", e=>{ if(e.target.id==="shop-ovl") e.target.classList.remove("on"); });
 $("stats-ovl").addEventListener("click", e=>{ if(e.target.id==="stats-ovl") e.target.classList.remove("on"); });
 
-// Trykk på fylt bokstavrute → vis/marker bokstaven uten ekstra TTS
+// Trykk på fylt bokstavrute → SI bokstaven og marker ruten
 $("slots").addEventListener("click", e=>{
   const s=e.target.closest(".slot");
   if(s && s.classList.contains("filled") && s.textContent){
     clearTTS(true);
-    sfx.ladder(0);
+    speakSound(s.textContent.trim());
     s.classList.add("say"); setTimeout(()=>s.classList.remove("say"), 450);
   }
 });
