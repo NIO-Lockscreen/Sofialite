@@ -537,8 +537,10 @@ const ALL_LETTERS = "ABDEFGHIJKLMNOPRSTUVYÆØÅ".split("");
 // som "lll" og "vvv" ble STAVET av stemmen ("L-L-L", "V-V-V") i stedet for
 // å bli sagt som en lyd – samme feilklasse som den purgede uttale-ordboken.
 // Web Speech har ingen pålitelig fonem-styring, så bokstavnavn er tryggest.
-const LYD = {A:"a",B:"b",D:"d",E:"e",F:"f",G:"g",H:"h",I:"i",J:"j",K:"k",L:"l",M:"m",
-  N:"n",O:"o",P:"p",R:"r",S:"s",T:"t",U:"u",V:"v",Y:"y",Æ:"æ",Ø:"ø",Å:"å"};
+// Låneordbokstavene C/Q/W/X/Z MÅ også være med: nb-stemmen leser en enslig
+// STOR bokstav som «stor Z», så PIZZA ble "p-i-stor z-stor z-a".
+const LYD = {A:"a",B:"b",C:"c",D:"d",E:"e",F:"f",G:"g",H:"h",I:"i",J:"j",K:"k",L:"l",M:"m",
+  N:"n",O:"o",P:"p",Q:"q",R:"r",S:"s",T:"t",U:"u",V:"v",W:"w",X:"x",Y:"y",Z:"z",Æ:"æ",Ø:"ø",Å:"å"};
 
 // Bokstaver barn ofte blander – brukes som smarte lurebokstaver
 const FORVEKSLING = {B:["D","P"],D:["B","T"],P:["B"],T:["D"],M:["N"],N:["M"],E:["Æ","I"],Æ:["E","Å"],
@@ -746,7 +748,7 @@ function speakSound(L, tone=0){
   // Bokstavlyd (lydmetoden). Interrupt-hopp mellom bokstaver styres av
   // seq-vernet i scheduleTTS, så gamle lyder kan ikke lekke inn etter ordet.
   sfx.ladder(tone);
-  speak(LYD[L]||L, {rate:0.55, pitch:1.1});
+  speak(LYD[L]||String(L||"").toLowerCase(), {rate:0.55, pitch:1.1});
 }
 
 // 🦉 Lyder ordet: uglehjelpen SIER hver bokstavlyd mens ruten lyser,
