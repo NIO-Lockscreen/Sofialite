@@ -649,6 +649,8 @@ function announceSerie2(){
 const RAR_NAME = {vanlig:"Vanlig", sjelden:"Sjelden! 💙", episk:"EPISK! 💜", legendarisk:"⭐ LEGENDARISK! ⭐"};
 const RAR_WEIGHT = {vanlig:55, sjelden:28, episk:13, legendarisk:4};
 const SHOP_COST = {vanlig:6, sjelden:6, episk:12, legendarisk:20};
+// Mynter for duplikat fra kiste – skal kjennes bedre jo sjeldnere skatten er
+const DUP_COINS = {vanlig:2, sjelden:4, episk:6, legendarisk:10};
 
 // Samle-sett med mesterpremie
 const SETS = [
@@ -979,13 +981,31 @@ function flyStar(fromEl, emoji="✨", target){
 let idleTimer=null, hintCount=0;
 // Bokstaven barnet faktisk trenger nå – ikke alltid den første. I
 // "mangler"-modus står den i data-want på den tomme ruten; i stav/lytt er
-// det bokstaven for første ufylte rute. Uten ruter (velg-modus): forbokstav.
+// det bokstaven for første ufylte rute. Uten ruter (velg-modus): en bokstav
+// som faktisk skiller riktig ord fra de andre valgene.
 function nextNeededLetter(){
   if(!currentWord) return null;
   const slots=[...document.querySelectorAll("#slots .slot")];
   const i=slots.findIndex(s=>!s.classList.contains("filled"));
-  if(i<0) return currentWord.w[0];
+  if(i<0) return distinctChoiceLetter();
   return slots[i].dataset.want || currentWord.w[i];
+}
+// Velg-modus: "se etter K" hjelper ikke når flere valg starter med K.
+// Helst en bokstav som KUN finnes i riktig ord; ellers den første
+// posisjonen der riktig ord skiller lag med alle valg som fortsatt matcher.
+function distinctChoiceLetter(){
+  const W=currentWord.w;
+  const others=[...document.querySelectorAll("#tiles .wordbtn")]
+    .map(b=>b.textContent).filter(w=>w!==W);
+  if(!others.length) return W[0];
+  const unique=W.split("").find(L=>others.every(w=>!w.includes(L)));
+  if(unique) return unique;
+  for(let i=0;i<W.length;i++){
+    const rivals=others.filter(w=>w.slice(0,i)===W.slice(0,i));
+    if(!rivals.length) break;
+    if(rivals.every(w=>w[i]!==W[i])) return W[i];
+  }
+  return W[0];
 }
 function resetIdle(){
   clearTimeout(idleTimer);
@@ -1649,9 +1669,10 @@ function openChest(){
   const hadAll=serie2Open(); // før vi legger til: var serie 2 allerede åpen?
   const dup=!!SAVE.collection[chestLoot.e];
   if(dup){
-    run && (run.coinsWon+=2); // i reisesekken – bankes ved reisens slutt
+    const dupCoins=DUP_COINS[chestLoot.r]||2;
+    run && (run.coinsWon+=dupCoins); // i reisesekken – bankes ved reisens slutt
     sfx.coin();
-    $("chest-hint").textContent="Du har den fra før → +2 🪙 mynter!";
+    $("chest-hint").textContent="Du har den fra før → +"+dupCoins+" 🪙 mynter!";
   } else {
     $("chest-hint").textContent="NY i emojiboka di! 📖";
     (SAVE.newInBook=SAVE.newInBook||{})[chestLoot.e]=true; // ✨ skinner i boka til den er sett
@@ -1793,13 +1814,17 @@ function showBook(){
     if(n>1){ const s=document.createElement("div"); s.className="cnt"; s.textContent="×"+n; c.appendChild(s); }
     if(isNew){ const nb=document.createElement("div"); nb.className="ny-badge"; nb.textContent="NY!"; c.appendChild(nb); }
     if(n){ owned++; c.onclick=()=>{
-      // ✨ Første trykk på en ny emoji "kvitterer": glansen forsvinner med et lite show
+      // ✨ Første trykk på en ny emoji "kvitterer": glansen forsvinner med et
+      // lite show – og en hemmelig mynt rett i banken!
       if(SAVE.newInBook && SAVE.newInBook[item.e]){
         delete SAVE.newInBook[item.e];
         c.classList.remove("shiny");
         const nb=c.querySelector(".ny-badge"); if(nb) nb.remove();
-        sfx.star(); flyStar(c,"✨");
+        SAVE.coins+=1;
+        sfx.coin(); flyStar(c,"🪙");
         persist(); updateNyBadges();
+        toast(item.e+" "+RAR_NAME[item.r]+" · 🤫 Hemmelig mynt! +1 🪙");
+        return;
       } else sfx.pop();
       toast(item.e+" "+RAR_NAME[item.r]);
     }; }
