@@ -134,6 +134,13 @@
   @keyframes pump{50%{transform:scale(1.5) rotate(6deg)}}
 
   .fly-star{position:fixed; font-size:26px; pointer-events:none; z-index:60; transition:all .8s cubic-bezier(.3,.7,.4,1);}
+  /* Diskret stjernestøv-dryss: et korn faller stille fra telleren og blekner */
+  .dust-fall{position:fixed; font-size:13px; pointer-events:none; z-index:60; opacity:.7;
+    transform:translate(-50%,0); animation:dustfall 1.2s ease-in forwards;}
+  @keyframes dustfall{
+    60%{opacity:.35;}
+    100%{transform:translate(-50%,44px) scale(.4) rotate(25deg); opacity:0;}
+  }
 
   /* ---------- KISTE ---------- */
   #scr-chest{justify-content:center; gap:14px;}
@@ -491,6 +498,7 @@
   <div id="topbar">
     <div class="pill">✨ <span id="star-count">0</span></div>
     <div class="pill">❤️ <span id="heart-count">5</span></div>
+    <div class="pill">🪙 <span id="coin-count">0</span></div>
     <div id="path"></div>
     <div class="pill">🔥 <span id="streak-count">0</span></div>
     <div class="pill" id="charm-pill" style="display:none"></div>
@@ -501,10 +509,10 @@
     <div id="boss-hp"></div>
   </div>
   <!-- Trykk på bildet = samme hjelp som ugla: lyder ordet bokstav for bokstav -->
-  <div id="big-emoji" onclick="soundOutWord()" title="Lyder ordet">☀️</div>
+  <div id="big-emoji" onclick="owlHelp()" title="Lyder ordet">☀️</div>
   <div class="helper-row">
     <button class="roundbtn" onclick="speakWord()" title="Hør ordet">🔊</button>
-    <button class="roundbtn" onclick="soundOutWord()" title="Vis ordet sakte">🦉</button>
+    <button class="roundbtn" onclick="owlHelp()" title="Vis ordet sakte">🦉</button>
   </div>
   <div id="instruction">Stav ordet!</div>
   <div id="slots"></div>
@@ -892,6 +900,29 @@ function soundOutWord(){
   }, W.length*step+500);
 }
 
+// 🦉 Uglehjelp fra knapp/bilde: første trykk per ord er gratis, deretter
+// koster det ett stjernestøv. Uglen hjelper ALLTID – også på 0 støv.
+// Ingen tekst om tapet: bare et lite korn som drysser fra ✨-telleren,
+// så hun kjenner at hjelpen "koster" uten å bli fortalt det.
+// (Automatisk hjelp etter feil går rett på soundOutWord og er gratis.)
+function owlHelp(){
+  if(!currentWord) return;
+  if(run && !run.failed && $("scr-game").classList.contains("active")){
+    if(currentWord.owlFreeUsed){
+      if(run.stars>0){ run.stars--; updateHUD(); dustAway(); }
+    } else currentWord.owlFreeUsed=true;
+  }
+  soundOutWord();
+}
+function dustAway(){
+  const jar=$("star-count"); if(!jar) return;
+  const r=jar.getBoundingClientRect();
+  const d=document.createElement("div"); d.className="dust-fall"; d.textContent="✨";
+  d.style.left=(r.left+r.width/2)+"px"; d.style.top=(r.bottom-2)+"px";
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),1300);
+}
+
 // Seiersstaving: SIER hver bokstav i takt med at ruten lyser (med stigende
 // tone), og sier hele ordet til slutt. Bokstav-lekkasje etter ordet hindres
 // av TTS_SEQ-vernet, så det er trygt å snakke her igjen.
@@ -1123,6 +1154,7 @@ function updateHUD(){
   $("star-count").textContent=run.stars;
   $("streak-count").textContent=run.streak;
   if($("heart-count")) $("heart-count").textContent=run.hearts;
+  if($("coin-count")) $("coin-count").textContent=run.coinsWon; // 🪙 reisesekken
   renderPath();
 }
 
@@ -1327,8 +1359,9 @@ function buildChallenge(mode){
         const s=slots.children[idx]; s.textContent=L; s.classList.add("filled");
         if(b.dataset.gull){
           run.coinsWon+=2; // i reisesekken – bankes ved reisens slutt
-          sfx.coin(); flyStar(b,"🪙");
+          sfx.coin(); flyStar(b,"🪙",$("coin-count"));
           toast("✨ Gyllen bokstav! +2 🪙");
+          updateHUD();
         }
         b.classList.add("used"); idx++;
         setTimeout(compactTiles, 220); // la flisens egen krympe-animasjon spille først
@@ -1446,7 +1479,7 @@ function solveWord(){
   if(currentWord.brave) starGain *= 2;          // ⚡ Lynstien: dobbel stjerne-lønn
   run.stars += starGain;
   SAVE.totalStars += starGain;
-  if(run.charm==="mynt"){ run.coinsWon+=1; sfx.coin(); setTimeout(()=>flyStar($("big-emoji"),"🪙"),260); } // 🪙 Mynt-trollet
+  if(run.charm==="mynt"){ run.coinsWon+=1; sfx.coin(); setTimeout(()=>flyStar($("big-emoji"),"🪙",$("coin-count")),260); } // 🪙 Mynt-trollet
   flyStar($("big-emoji"), "✨");
   if(currentWord.firstTry && run.streak>1){
     run.stars += 1; SAVE.totalStars += 1;
