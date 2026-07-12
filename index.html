@@ -45,6 +45,7 @@
   .pill{background:#fff; border-radius:999px; padding:6px 14px; font-weight:700; font-size:18px;
     box-shadow:0 3px 0 var(--skygge); display:flex; align-items:center; gap:6px; white-space:nowrap;}
   .pill small{font-weight:600; font-size:13px; opacity:.7;}
+  button.pill{border:none; cursor:pointer; font-family:inherit; color:inherit;}
 
   #path{display:flex; gap:6px; align-items:center; margin:10px 0 4px;}
   .dot{width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 2px 0 var(--skygge); transition:all .3s; display:flex;align-items:center;justify-content:center;font-size:11px;}
@@ -435,7 +436,7 @@
 
 <!-- START -->
 <div class="screen active" id="scr-start">
-  <button class="roundbtn" id="fs-btn" onclick="toggleFullscreen()">⛶</button>
+  <button class="roundbtn js-fsbtn" id="fs-btn" onclick="toggleFullscreen()">⛶</button>
   <button class="roundbtn" id="settings-btn" onclick="openSettings()">⚙️</button>
   <div id="logo-emoji">🦄</div>
   <div id="logo">ORDREISEN</div>
@@ -502,6 +503,7 @@
     <div id="path"></div>
     <div class="pill">🔥 <span id="streak-count">0</span></div>
     <div class="pill" id="charm-pill" style="display:none"></div>
+    <button class="pill js-fsbtn" onclick="toggleFullscreen()" title="Fullskjerm">⛶</button>
   </div>
   <div id="boss-bar">
     <div id="boss-emoji">👾</div>
@@ -2041,8 +2043,23 @@ document.addEventListener("touchmove", e=>{
   if(!e.target.closest("#book-scroll, #shop-grid, #stats-list, .ovl-box")) e.preventDefault();
 }, {passive:false});
 document.addEventListener("gesturestart", e=>e.preventDefault());
-// (Dobbelttrykk-zoom er allerede slått av via touch-action:manipulation,
-//  slik at raske trykk på fliser og kisten fungerer uten forsinkelse.)
+// Dobbelttrykk-zoom: touch-action:manipulation + viewport-innstillingene
+// SKAL slå det av, men ekte iPad-er zoomer likevel av og til på raske
+// dobbelttrykk (sett i felt – gjorde spilleren lei seg!). Hardt vern:
+// svelg det andre raske trykket før Safari rekker å zoome, og send et
+// syntetisk klikk i stedet – da virker kisten (3 raske trykk!) og
+// flisene helt som før, bare uten zoom. click() på målet bobler, så
+// også addEventListener-lyttere (bokstavruter m.m.) får klikket sitt.
+let lastTapEnd=0;
+document.addEventListener("touchend", e=>{
+  if(e.touches.length || e.changedTouches.length!==1){ lastTapEnd=0; return; }
+  const now=Date.now();
+  if(now-lastTapEnd<400 && e.cancelable){
+    e.preventDefault();
+    if(e.target && e.target.click) e.target.click();
+  }
+  lastTapEnd=now;
+}, {passive:false});
 // iOS krever brukerberøring før lyd + tale: vekk begge ved første trykk
 let primed=false;
 document.addEventListener("pointerdown", ()=>{
@@ -2069,8 +2086,10 @@ function fsTip(){
 function updateFsBtn(){
   const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
   const fsEl=document.fullscreenElement||document.webkitFullscreenElement;
-  $("fs-btn").style.display = standalone ? "none" : "block"; // allerede fullskjerm-app
-  $("fs-btn").textContent = fsEl ? "🡼" : "⛶";
+  document.querySelectorAll(".js-fsbtn").forEach(b=>{
+    b.style.display = standalone ? "none" : ""; // allerede fullskjerm-app
+    b.textContent = fsEl ? "🡼" : "⛶";
+  });
 }
 document.addEventListener("fullscreenchange", updateFsBtn);
 document.addEventListener("webkitfullscreenchange", updateFsBtn);
