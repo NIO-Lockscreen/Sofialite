@@ -669,11 +669,17 @@ const LOOT = [
   ...["🧞","🪄","🔮","🚁","🌠","🗿","🎆","🎨"].map(e=>({e,r:"episk",s:2})),
   ...["👸","🪽","🫧","💫","🌺","🎇"].map(e=>({e,r:"legendarisk",s:2})),
   // 🌞 SERIE 3 – den siste skattkisten: åpnes når BÅDE serie 1 og 2 er
-  // fulle. Samme form som de to første (10/10/8/6 = 34 nye).
-  ...["🍫","🍬","🥐","🍯","🪀","🎏","🪴","🧶","🪺","🫐"].map(e=>({e,r:"vanlig",s:3})),
-  ...["🎺","🪗","🛼","🛷","🎳","🚠","🪃","🧩","🪆","🎤"].map(e=>({e,r:"sjelden",s:3})),
-  ...["🧙","🧝","🦸","🎭","🌌","🛰️","🪸","🎊"].map(e=>({e,r:"episk",s:3})),
-  ...["🌞","🌜","🧜‍♂️","🕊️","🧚‍♂️","🤴"].map(e=>({e,r:"legendarisk",s:3})),
+  // fulle. Dobbelt så stor som de to første (20/20/16/12 = 68 nye), så den
+  // holder lenge for den som allerede har "alt". Samme forhold mellom
+  // sjeldenhetene, så trekkoddsene er uendret.
+  ...["🍫","🍬","🥐","🍯","🪀","🎏","🪴","🧶","🪺","🫐",
+      "🍑","🍊","🥞","🥧","🍮","🍧","🫖","🧺","🎣","🌵"].map(e=>({e,r:"vanlig",s:3})),
+  ...["🎺","🪗","🛼","🛷","🎳","🚠","🪃","🧩","🪆","🎤",
+      "🛵","🚤","🎿","🛹","⛸️","🏓","🥊","🪂","🧭","🔭"].map(e=>({e,r:"sjelden",s:3})),
+  ...["🧙","🧝","🦸","🎭","🌌","🛰️","🪸","🎊",
+      "🦚","🦢","🏰","🗻","🌉","🪐","🩰","💐"].map(e=>({e,r:"episk",s:3})),
+  ...["🌞","🌜","🧜‍♂️","🕊️","🧚‍♂️","🤴",
+      "🐉","🥇","🌅","👼","🌎","☄️"].map(e=>({e,r:"legendarisk",s:3})),
 ];
 const SERIER = 3;
 function serieOf(x){ return x.s || 1; }
@@ -722,6 +728,9 @@ const SETS = [
   {navn:"Leke-loftet 🪀", emojis:["🪀","🎏","🧶","🪆","🧩","🎳"], premie:20, s:3},
   {navn:"Sirkus-scenen 🎭", emojis:["🎺","🪗","🎤","🎭","🎊","🦸"], premie:25, s:3},
   {navn:"Eventyrfolket 🧙", emojis:["🧙","🧝","🧚‍♂️","🧜‍♂️","🤴","🕊️"], premie:35, s:3},
+  {navn:"Kiosk-kroken 🍧", emojis:["🍑","🍊","🥞","🥧","🍮","🍧"], premie:20, s:3},
+  {navn:"Fart og moro 🛹", emojis:["🛵","🚤","🎿","🛹","⛸️","🏓"], premie:25, s:3},
+  {navn:"Vidunderlig verden 🌎", emojis:["🌎","🌅","☄️","🪐","🌉","🗻"], premie:35, s:3},
 ];
 
 // ---------- BOSSER (flere låses opp med nivå!) ----------
