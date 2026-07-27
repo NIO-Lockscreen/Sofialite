@@ -121,10 +121,13 @@
   @keyframes gullglimt{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
   @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px) rotate(-4deg)}40%{transform:translateX(9px) rotate(4deg)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
 
+  /* Alt måles i em: da holder det å skalere font-size for å krympe HELE
+     knappen (padding, radius, marg) når det er mange/lange ordvalg. */
   .wordbtn{
-    font-family:inherit; font-weight:700; font-size:34px; letter-spacing:4px; color:var(--natt);
-    background:var(--tile-bg); border:none; border-radius:22px; padding:16px 30px; cursor:pointer; margin:7px;
+    font-family:inherit; font-weight:700; font-size:34px; letter-spacing:.12em; color:var(--natt);
+    background:var(--tile-bg); border:none; border-radius:.65em; padding:.47em .88em; cursor:pointer; margin:.21em;
     box-shadow:0 6px 0 var(--tile-sh), 0 8px 14px var(--skygge); transition:transform .08s;
+    max-width:100%; white-space:nowrap;
   }
   .wordbtn:active{transform:translateY(4px);}
   .wordbtn.shake{animation:shake .45s;}
@@ -267,7 +270,8 @@
   /* ---------- ROGUELIKE-VALG: reisevenn + veivalg ---------- */
   #choice-ovl{position:fixed; inset:0; background:rgba(42,34,80,.5); display:none; align-items:center; justify-content:center; z-index:90;}
   #choice-ovl.on{display:flex;}
-  #choice-grid{display:flex; flex-direction:column; gap:12px;}
+  #choice-grid{display:flex; flex-direction:column; gap:12px; overflow-y:auto; min-height:0; padding:2px;
+    overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;}
   .choice-btn{background:#fff; border:none; border-radius:22px; padding:14px 16px; font-family:inherit; cursor:pointer;
     box-shadow:0 6px 0 var(--skygge); display:flex; align-items:center; gap:14px; text-align:left; transition:transform .08s; width:100%;}
   .choice-btn:active{transform:translateY(3px);}
@@ -340,6 +344,24 @@
      svarrutene forsvant og valgte bokstaver la seg oppå flisene (iPad).
      Overskudd tas i stedet av #big-emoji, som kan krympe. */
   #slots,#tiles,.helper-row,#instruction{flex-shrink:0;}
+  /* VELG ORDET: på høye nivåer er det opptil 5 alternativer, og ordene kan
+     være 6 bokstaver lange. Da sprakk raden ut av #tiles – som aldri fikk
+     krympe (flex-shrink:0) – og de nederste valgene havnet UTENFOR skjermen.
+     Her får boksen krympe (og scrolle som siste utvei), og fitChoiceButtons()
+     skalerer teksten til alle valgene faktisk står innenfor. */
+  #tiles.choose{flex-shrink:1; min-height:0; overflow-y:auto; align-content:center; padding:10px;
+    touch-action:pan-y; overscroll-behavior:contain;}
+  #tiles.choose .wordbtn{flex:0 0 auto;}
+  /* Lav skjerm (telefon i landskap): ordvalgene er det viktigste – hent
+     plassen fra pynt og luft rundt dem. */
+  @media (max-height:560px){
+    body.choosing #tiles.choose{padding:6px;}
+    body.choosing #instruction{font-size:16px; padding:4px 12px; margin:0;}
+    body.choosing .helper-row{padding:2px 6px; margin-top:0;}
+    body.choosing .roundbtn{width:42px; height:42px; font-size:21px;}
+    body.choosing #feedback{min-height:20px; font-size:16px; padding:4px 10px;}
+    body.choosing #big-emoji{margin:0;}
+  }
   #feedback{min-width:min(92vw,450px); background:rgba(255,255,255,.75); border-radius:20px; padding:8px 16px; box-shadow:0 5px 0 rgba(42,34,80,.08);}
   .slot.wrongflash{animation:wrongflash .55s ease;}
   @keyframes wrongflash{0%,100%{background:rgba(255,255,255,.55)}35%{background:#ffe0e5; border-color:#ff6f82; transform:scale(1.08)}}
@@ -379,7 +401,7 @@
     #big-emoji{font-size:150px;}
     #instruction{font-size:26px;}
     #feedback{font-size:28px; min-height:40px;}
-    .wordbtn{font-size:44px; padding:22px 44px; margin:10px;}
+    .wordbtn{font-size:44px;}
     .bigbtn{font-size:32px; padding:24px 52px;}
     .roundbtn{width:68px; height:68px; font-size:32px;}
     .pill{font-size:22px; padding:8px 18px;}
@@ -646,15 +668,38 @@ const LOOT = [
   ...["🦩","🐳","🦥","🦦","🎡","🎢","🎯","🏆","🪩","🛝"].map(e=>({e,r:"sjelden",s:2})),
   ...["🧞","🪄","🔮","🚁","🌠","🗿","🎆","🎨"].map(e=>({e,r:"episk",s:2})),
   ...["👸","🪽","🫧","💫","🌺","🎇"].map(e=>({e,r:"legendarisk",s:2})),
+  // 🌞 SERIE 3 – den siste skattkisten: åpnes når BÅDE serie 1 og 2 er
+  // fulle. Samme form som de to første (10/10/8/6 = 34 nye).
+  ...["🍫","🍬","🥐","🍯","🪀","🎏","🪴","🧶","🪺","🫐"].map(e=>({e,r:"vanlig",s:3})),
+  ...["🎺","🪗","🛼","🛷","🎳","🚠","🪃","🧩","🪆","🎤"].map(e=>({e,r:"sjelden",s:3})),
+  ...["🧙","🧝","🦸","🎭","🌌","🛰️","🪸","🎊"].map(e=>({e,r:"episk",s:3})),
+  ...["🌞","🌜","🧜‍♂️","🕊️","🧚‍♂️","🤴"].map(e=>({e,r:"legendarisk",s:3})),
 ];
-function lootSerie1(){ return LOOT.filter(x=>x.s!==2); }
-function lootSerie2(){ return LOOT.filter(x=>x.s===2); }
-function serie2Open(){ return lootSerie1().every(x=>SAVE.collection[x.e]); }
-function availableLoot(){ return serie2Open() ? LOOT : lootSerie1(); }
-function announceSerie2(){
+const SERIER = 3;
+function serieOf(x){ return x.s || 1; }
+function lootSerie(n){ return LOOT.filter(x=>serieOf(x)===n); }
+function serieComplete(n){ return lootSerie(n).every(x=>SAVE.collection[x.e]); }
+// Høyeste serie som er åpnet: hver serie låser opp den neste.
+function maxSerie(){
+  let n=1;
+  while(n<SERIER && serieComplete(n)) n++;
+  return n;
+}
+function serie2Open(){ return maxSerie()>=2; }
+function availableLoot(){ const m=maxSerie(); return LOOT.filter(x=>serieOf(x)<=m); }
+const SERIE_NAVN = {2:"HEMMELIG SAMLING", 3:"SISTE SKATTKISTE"};
+function announceSerie(n){
   confetti(80,true); sfx.fanfare();
-  toast("🔓✨ HEMMELIG SAMLING ÅPNET! "+lootSerie2().length+" nye skatter venter!");
-  speak("Fantastisk, "+SAVE.name+"! Du har samlet alt sammen! En hemmelig ny samling er åpnet!", {rate:0.95, interrupt:false});
+  toast("🔓✨ "+(SERIE_NAVN[n]||"NY SAMLING")+" ÅPNET! "+lootSerie(n).length+" nye skatter venter!");
+  const linje = n>=SERIER
+    ? "Utrolig, "+SAVE.name+"! Du har samlet alt! Den aller siste skattkisten er åpnet!"
+    : "Fantastisk, "+SAVE.name+"! Du har samlet alt sammen! En hemmelig ny samling er åpnet!";
+  speak(linje, {rate:0.95, interrupt:false, protect:true});
+}
+// Kall før/etter at en emoji legges til: låste den opp neste serie?
+function checkSerieUnlock(before){
+  const now=maxSerie();
+  if(now>before) announceSerie(now);
 }
 const RAR_NAME = {vanlig:"Vanlig", sjelden:"Sjelden! 💙", episk:"EPISK! 💜", legendarisk:"⭐ LEGENDARISK! ⭐"};
 const RAR_WEIGHT = {vanlig:55, sjelden:28, episk:13, legendarisk:4};
@@ -672,6 +717,11 @@ const SETS = [
   {navn:"Kosedyr-parade 🐾", emojis:["🐞","🐹","🐰","🦔","🐣","🦥"], premie:20, s:2},
   {navn:"Tivoli-tur 🎡", emojis:["🎡","🎢","🛝","🎯","🏆","🪩"], premie:25, s:2},
   {navn:"Stjernestøv 🌠", emojis:["🔮","🪄","🌠","💫","🫧","🪽"], premie:30, s:2},
+  // Serie 3-sett (NB: alltid legg nye sett BAKERST – SAVE.setsClaimed
+  // bruker plasseringen i lista som nøkkel)
+  {navn:"Leke-loftet 🪀", emojis:["🪀","🎏","🧶","🪆","🧩","🎳"], premie:20, s:3},
+  {navn:"Sirkus-scenen 🎭", emojis:["🎺","🪗","🎤","🎭","🎊","🦸"], premie:25, s:3},
+  {navn:"Eventyrfolket 🧙", emojis:["🧙","🧝","🧚‍♂️","🧜‍♂️","🤴","🕊️"], premie:35, s:3},
 ];
 
 // ---------- BOSSER (flere låses opp med nivå!) ----------
@@ -838,13 +888,36 @@ function spokenWord(W){
 // "UGLE ... L".
 let TTS_SEQ=0;
 let TTS_TIMERS=[];
-function clearTTS(cancelSpeech=true){
+// Lange beskjeder (boss-intro, reisevenn, hemmelig samling, nivå opp …) ble
+// klippet midt i setningen fordi neste steg i spillet kjørte på en fast
+// timer og kansellerte stemmen. To vern mot det:
+//  1) speakThen(): spillet går videre NÅR stemmen er ferdig (onend), aldri før.
+//  2) protect:true: beskjeden overlever clearTTS/interrupt – annet legger seg
+//     i kø bak i stedet for å kutte den.
+let PROTECT_UNTIL=0;
+// Grov varighet: ~12 tegn i sekundet ved rate 1.0. Brukes som sikkerhetsnett
+// hvis onend aldri kommer (kjent iOS-lune) og som pause uten talestøtte.
+function speechMs(text, rate=0.8){
+  const n=String(text||"").length;
+  return Math.max(700, Math.round(n/(12*Math.max(0.4,rate))*1000)+450);
+}
+function speechBusy(){
+  return !!(window.speechSynthesis && (speechSynthesis.speaking || speechSynthesis.pending));
+}
+function protectedSpeaking(){ return Date.now()<PROTECT_UNTIL && speechBusy(); }
+// force=true: barnet ba selv om ny lyd (🔊/🦉/bokstavrute) – da skal alt vike.
+function stopSpeech(force=false){
+  if(!window.speechSynthesis) return true;
+  if(!force && protectedSpeaking()) return false;
+  PROTECT_UNTIL=0;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  return true;
+}
+function clearTTS(cancelSpeech=true, force=false){
   TTS_SEQ++;
   TTS_TIMERS.forEach(id=>clearTimeout(id));
   TTS_TIMERS=[];
-  if(cancelSpeech && window.speechSynthesis){
-    try{ speechSynthesis.cancel(); }catch(e){}
-  }
+  if(cancelSpeech) stopSpeech(force);
   return TTS_SEQ;
 }
 function scheduleTTS(seq, fn, delay){
@@ -859,18 +932,51 @@ function speakWholeWord(W, opts={}){
   speak(spokenWord(W), {rate:0.68, ...opts});
 }
 
-function speak(text, {rate=0.8, pitch=1.15, interrupt=true}={}){
-  if(!window.speechSynthesis || !text) return;
+function speak(text, {rate=0.8, pitch=1.15, interrupt=true, protect=false, onend=null}={}){
+  if(!window.speechSynthesis || !text) return false;
   try{
-    if(interrupt) speechSynthesis.cancel();
+    // Pågår en vernet beskjed? Ikke kutt den – vi legger oss i kø bak.
+    if(interrupt) stopSpeech(false);
     const u=new SpeechSynthesisUtterance(text);
     u.lang="nb-NO"; u.rate=rate; u.pitch=pitch;
     if(NB_VOICE) u.voice=NB_VOICE;
+    let ended=false;
+    const finish=()=>{ if(ended) return; ended=true; if(protect) PROTECT_UNTIL=0; if(onend) onend(); };
+    u.onend=finish; u.onerror=finish;
+    if(protect) PROTECT_UNTIL=Date.now()+speechMs(text,rate)+1500;
     speechSynthesis.speak(u);
-  }catch(e){}
+    return true;
+  }catch(e){ return false; }
+}
+// Si setningen ferdig FØR spillet går videre. min = korteste pause (samme
+// rytme som de gamle faste timerne), pad = liten pust etter siste ord.
+// cb kjøres på en vanlig timer – dette er spillfremdrift, og må ALDRI kunne
+// avlyses av clearTTS, ellers stopper reisen.
+function speakThen(text, opts={}, cb, {min=600, pad=300}={}){
+  const started=Date.now();
+  let done=false;
+  const go=()=>{
+    if(done) return; done=true;
+    setTimeout(()=>{ try{ cb && cb(); }catch(e){} }, Math.max(pad, min-(Date.now()-started)));
+  };
+  const est=speechMs(text, opts.rate||0.8);
+  const cap=setTimeout(go, est+3000); // sikkerhetsnett hvis onend uteblir
+  const ok=speak(text, {...opts, onend:()=>{ clearTimeout(cap); go(); }});
+  if(!ok){ clearTimeout(cap); go(); } // ingen talestøtte: bare hold rytmen
+}
+// Vent til stemmen er stille før ordet leses opp, slik at en pågående
+// beskjed (f.eks. småbokstav-leksjonen) får snakke ferdig først.
+function speakWordSoon(delay=400){
+  const seq=TTS_SEQ, start=Date.now();
+  const tick=()=>{
+    if(seq!==TTS_SEQ) return;
+    if(speechBusy() && Date.now()-start<9000){ TTS_TIMERS.push(setTimeout(tick, 300)); return; }
+    speakWord();
+  };
+  scheduleTTS(seq, tick, delay);
 }
 function speakWord(txt){
-  clearTTS(true);
+  clearTTS(true, true); // barnet/spillet ber om ordet nå
   const w = (typeof txt==="string") ? txt : (currentWord ? currentWord.w : null);
   if(w) speakWholeWord(w);
 }
@@ -887,7 +993,7 @@ function speakSound(L, tone=0){
 function soundOutWord(){
   if(!currentWord) return;
   resetIdle();
-  const seq=clearTTS(true);
+  const seq=clearTTS(true, true); // uglehjelp er alltid barnets eget ønske
   const W=currentWord.w, slots=[...document.querySelectorAll("#slots .slot")], step=950;
   W.split("").forEach((L,i)=>{
     scheduleTTS(seq, ()=>{
@@ -932,6 +1038,13 @@ function spellOutWord(cb){
   const seq=clearTTS(true);
   const slots=[...document.querySelectorAll("#slots .slot")];
   const W=currentWord.w, step=650; // rom nok til at hver bokstav blir sagt ferdig
+  const wordRef=currentWord;
+  let advanced=false;
+  const advance=()=>{
+    // This is game progression, not TTS. Do not let a speaker tap cancel it.
+    if(advanced) return; advanced=true;
+    if(currentWord===wordRef && run && !run.failed) cb();
+  };
   W.split("").forEach((L,i)=>{
     scheduleTTS(seq, ()=>{
       slots.forEach(s=>s.classList.remove("say"));
@@ -939,16 +1052,16 @@ function spellOutWord(cb){
       speakSound(L, i);
     }, i*step);
   });
+  // Hele ordet til slutt: lange ord (REGNBUE, ELEFANT) rakk ikke å bli sagt
+  // ferdig før neste rom startet og kuttet stemmen. Nå venter vi på onend.
   scheduleTTS(seq, ()=>{
     slots.forEach(s=>s.classList.remove("say"));
-    speakWholeWord(W, {rate:0.64});
     sfx.chord();
+    speakThen(spokenWord(W), {rate:0.64}, advance, {min:900, pad:500});
   }, W.length*step+350);
-  const wordRef=currentWord;
-  setTimeout(()=>{
-    // This is game progression, not TTS. Do not let a speaker tap cancel it.
-    if(currentWord===wordRef && run && !run.failed) cb();
-  }, W.length*step+1100);
+  // Sikkerhetsnett: blir TTS-sekvensen avbrutt (barnet trykker 🔊 midt i),
+  // kjører ikke steget over – reisen må gå videre likevel.
+  setTimeout(advance, W.length*step+1100+speechMs(W,0.64)+1500);
 }
 
 // ---------- LÆRINGSSYSTEM ----------
@@ -1128,8 +1241,10 @@ function pickCharm(c){
   const pill=$("charm-pill");
   pill.textContent=c.e; pill.title=c.navn; pill.style.display="";
   toast(c.e+" "+c.navn+" blir med!");
-  clearTTS(true); speak(c.si, {rate:0.92});
-  setTimeout(beginJourney, 2200);
+  clearTTS(true, true);
+  // Reisevenn-replikkene er lange ("Skjoldvennen tar den første feilen på
+  // hvert ord!") – vent til den er sagt ferdig før første rom starter.
+  speakThen(c.si, {rate:0.92}, beginJourney, {min:2200, pad:450});
 }
 function beginJourney(){
   document.body.classList.remove("boss-mode");
@@ -1205,7 +1320,7 @@ function nextRoom(){
   updateHUD();
   currentWord.mode=mode;
   setupRoomUI(mode);
-  scheduleTTS(TTS_SEQ, ()=>speakWord(), 400);
+  speakWordSoon(400);
 }
 function setupRoomUI(mode){
   hintCount=0;
@@ -1213,7 +1328,7 @@ function setupRoomUI(mode){
   if(!SAVE.lowerTaught && lowerTeachActive()){
     SAVE.lowerTaught=true; SAVE.lowerUnlocked=true; persist();
     toast("🎓 Nå lærer du de små bokstavene! a b c");
-    speak("Nå er du så flink at vi øver på små bokstaver også! Noen ord kommer med små bokstaver.", {rate:0.9, interrupt:false});
+    speak("Nå er du så flink at vi øver på små bokstaver også! Noen ord kommer med små bokstaver.", {rate:0.9, interrupt:false, protect:true});
   }
   applyWordCase();
   $("big-emoji").textContent = mode==="lytt" ? "❓" : currentWord.e;
@@ -1255,6 +1370,45 @@ function compactTiles(){
   });
 }
 
+// VELG-MODUS: alle ordvalgene MÅ være synlige. På høyt nivå gir levelStep()
+// opptil 5 alternativer, og difficultyShift() kan gjøre ordene 6 bokstaver
+// lange – til sammen for høyt/bredt for skjermen, så de nederste knappene
+// havnet utenfor (skjermen klipper: .screen{overflow:hidden}).
+// Fiks: krymp teksten (alt i knappen måles i em) til alt står innenfor.
+function fitChoiceButtons(){
+  const tiles=$("tiles"), big=$("big-emoji");
+  if(big){ big.style.width=""; big.style.height=""; big.style.fontSize=""; }
+  if(!tiles || !tiles.classList.contains("choose")) return;
+  const btns=[...tiles.querySelectorAll(".wordbtn")];
+  if(!btns.length) return;
+  btns.forEach(b=>b.style.fontSize="");
+  const base=parseFloat(getComputedStyle(btns[0]).fontSize)||34;
+  const fits=()=> tiles.scrollHeight<=tiles.clientHeight+1 && tiles.scrollWidth<=tiles.clientWidth+1;
+  const setSize=s=>btns.forEach(b=>b.style.fontSize=s+"px");
+  // 1) Krymp ordene, men ikke under lesbar størrelse.
+  let size=base;
+  while(size>22 && !fits()){ size=Math.max(22, size-2); setSize(size); }
+  // 2) Fortsatt trangt? Ta heller plass fra bildet enn fra bokstavene.
+  if(big){
+    // offsetHeight, ikke getBoundingClientRect: popin-animasjonen starter på
+    // scale(0), og rect ville rapportert høyde 0 midt i innsvingen.
+    let bs=big.offsetHeight;
+    // Selve tegnet må krympe i takt med sirkelen, ellers renner emojien over kanten.
+    const ratio=bs ? (parseFloat(getComputedStyle(big).fontSize)||bs)/bs : 1;
+    while(bs>64 && !fits()){
+      bs=Math.max(64, bs-14);
+      big.style.width=big.style.height=bs+"px";
+      big.style.fontSize=Math.round(bs*ratio)+"px";
+    }
+  }
+  // 3) Siste utvei (telefon i landskap): litt mindre ord.
+  while(size>14 && !fits()){ size=Math.max(14, size-2); setSize(size); }
+}
+// Fonten (Fredoka) og rotasjon endrer målene i etterkant – mål på nytt.
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>fitChoiceButtons()).catch(()=>{});
+addEventListener("resize", ()=>fitChoiceButtons());
+addEventListener("orientationchange", ()=>setTimeout(fitChoiceButtons, 250));
+
 // ---------- OPPGAVETYPER ----------
 // Minimale par for "velg": ord som ligner (HUS/MUS) trener fonembevissthet
 function similarWords(W, n=2){
@@ -1282,10 +1436,14 @@ function similarWords(W, n=2){
 function buildChallenge(mode){
   const slots=$("slots"), tiles=$("tiles");
   slots.innerHTML=""; tiles.innerHTML="";
+  // Nullstill krympingen velg-modus kan ha gjort på bildet
+  const be=$("big-emoji"); be.style.width=be.style.height=be.style.fontSize="";
   const W=currentWord.w;
   // Slot-raden brekker ikke: 6–7-bokstavsord trenger mindre ruter/fliser
   slots.classList.toggle("long", W.length>=6);
   tiles.classList.toggle("long", W.length>=6);
+  tiles.classList.toggle("choose", mode==="velg");
+  document.body.classList.toggle("choosing", mode==="velg");
 
   if(mode==="velg"){
     $("instruction").textContent="Hvilket ord er riktig? 🤔";
@@ -1298,6 +1456,7 @@ function buildChallenge(mode){
       b.onclick=()=>{ resetIdle(); sfx.pop(); word===W ? solveWord() : miss(b, W[0]); };
       tiles.appendChild(b);
     });
+    fitChoiceButtons();
     return;
   }
 
@@ -1532,8 +1691,10 @@ function startBoss(){
   renderBossHP();
   updateHUD();
   toast("👾 "+run.boss.navn+" har gjemt ordene!");
-  speak(run.boss.navn+" har gjemt ordene. Stav dem tilbake. "+SAVE.name+" er trygg!", {rate:0.92});
-  setTimeout(bossNextWord, 1800);
+  // Vent til intro-replikken er ferdig: den faste 1800 ms-timeren startet
+  // neste ord midt i setningen, og ordet kansellerte stemmen.
+  speakThen(run.boss.navn+" har gjemt ordene. Stav dem tilbake. "+SAVE.name+" er trygg!",
+    {rate:0.92}, bossNextWord, {min:1800, pad:500});
 }
 function renderBossHP(){
   $("boss-hp").textContent = "💜".repeat(run.bossHP) + "🤍".repeat(run.boss.hp-run.bossHP);
@@ -1562,7 +1723,7 @@ function bossNextWord(){
   applyWordCase(); // småbokstav-læringen gjelder også boss-ord
   buildChallenge("stav");
   resetIdle();
-  scheduleTTS(TTS_SEQ, ()=>speakWord(), 400);
+  speakWordSoon(400);
 }
 function bossHit(){
   const from=$("slots").getBoundingClientRect(), to=$("boss-emoji").getBoundingClientRect();
@@ -1591,8 +1752,8 @@ function bossHit(){
     document.body.appendChild(splash); setTimeout(()=>splash.remove(), 1050);
     if(run.bossHP<=0) setTimeout(bossDefeat, 650);
     else {
-      speak("Bra! Bossen mister et hjerte. "+SAVE.name+" er trygg!", {rate:0.92});
-      setTimeout(bossNextWord, 1700);
+      speakThen("Bra! Bossen mister et hjerte. "+SAVE.name+" er trygg!",
+        {rate:0.92}, bossNextWord, {min:1700, pad:450});
     }
   }, 650);
 }
@@ -1603,13 +1764,12 @@ function bossDefeat(){
   sfx.fanfare();
   confetti(70,true);
   toast("🏆 Du beseiret "+run.boss.navn+"!");
-  speak("Hurra! Du beseiret "+run.boss.navn+", "+SAVE.name+"! Du får en superskatt!", {rate:0.95});
   persist();
-  setTimeout(()=>{
+  speakThen("Hurra! Du beseiret "+run.boss.navn+", "+SAVE.name+"! Du får en superskatt!", {rate:0.95}, ()=>{
     document.body.classList.remove("boss-mode");
     $("boss-bar").classList.remove("on");
     showChest("boss");
-  }, 1800);
+  }, {min:1800, pad:500});
 }
 
 // ---------- KISTER & LOOT ----------
@@ -1701,7 +1861,7 @@ function openChest(){
   const ln=$("loot-name");
   ln.textContent=RAR_NAME[chestLoot.r];
   ln.className="rar-"+chestLoot.r;
-  const hadAll=serie2Open(); // før vi legger til: var serie 2 allerede åpen?
+  const serieFor=maxSerie(); // før vi legger til: hvilke serier var åpne?
   const dup=!!SAVE.collection[chestLoot.e];
   if(dup){
     const dupCoins=DUP_COINS[chestLoot.r]||2;
@@ -1715,7 +1875,7 @@ function openChest(){
   SAVE.collection[chestLoot.e]=(SAVE.collection[chestLoot.e]||0)+1;
   persist();
   updateNyBadges();
-  if(!hadAll && serie2Open()) announceSerie2();
+  checkSerieUnlock(serieFor);
   const big = chestLoot.r==="episk"||chestLoot.r==="legendarisk";
   confetti(big?60:25, big);
   if(big) sfx.fanfare();
@@ -1750,16 +1910,17 @@ function pickPath(p){
   if(!run || run.pathPicked) return; // vern mot dobbelttrykk
   run.pathPicked=true;
   $("choice-ovl").classList.remove("on");
-  clearTTS(true);
+  clearTTS(true, true);
+  const go=()=>{ run.pathPicked=false; nextRoom(); };
+  show("scr-game");
   if(p.id==="modig"){
     run.brave=2; run.braveLoot=true;
     toast("⚡ Lynstien! Vanskeligere ord – dobbel premie!");
-    speak("Modig valgt! Lykke til!", {rate:0.95});
+    speakThen("Modig valgt! Lykke til!", {rate:0.95}, go, {min:1200, pad:400});
   } else {
     toast("🌸 Blomsterstien! God tur!");
+    setTimeout(go, 1200);
   }
-  show("scr-game");
-  setTimeout(()=>{ run.pathPicked=false; nextRoom(); }, 1200);
 }
 
 // ---------- SLUTT ----------
@@ -1810,7 +1971,7 @@ function showBook(){
   // Samle-sett
   const sw=$("sets-wrap"); sw.innerHTML="";
   SETS.forEach((set,si)=>{
-    if(set.s===2 && !serie2Open()) return; // hemmelige sett røpes ikke
+    if((set.s||1)>maxSerie()) return; // hemmelige sett røpes ikke
     const have=set.emojis.filter(e=>SAVE.collection[e]).length;
     const card=document.createElement("div"); card.className="set-card";
     const claimed=SAVE.setsClaimed[si];
@@ -1840,7 +2001,11 @@ function showBook(){
   const g=$("book-grid"); g.innerHTML="";
   let owned=0;
   const order=["legendarisk","episk","sjelden","vanlig"];
-  [...availableLoot()].sort((a,b)=>order.indexOf(a.r)-order.indexOf(b.r)).forEach(item=>{
+  // Serie først, så sjeldenhet: med tre samlinger blir boka rotete hvis
+  // seriene blandes om hverandre.
+  [...availableLoot()]
+    .sort((a,b)=> (serieOf(a)-serieOf(b)) || (order.indexOf(a.r)-order.indexOf(b.r)))
+    .forEach(item=>{
     const c=document.createElement("div");
     const n=SAVE.collection[item.e]||0;
     const isNew = n && SAVE.newInBook && SAVE.newInBook[item.e];
@@ -1865,11 +2030,14 @@ function showBook(){
     }; }
     g.appendChild(c);
   });
-  // 🔒 Teaser for den hemmelige samlingen til den er åpnet
-  if(!serie2Open()){
+  // 🔒 Teaser for neste låste samling (serie 2, så serie 3)
+  const neste=maxSerie()+1;
+  if(neste<=SERIER){
     const t=document.createElement("div");
     t.className="serie2-teaser";
-    t.innerHTML="🔒✨ <b>Hemmelig samling!</b><br>Samle alle "+lootSerie1().length+" skattene, så åpnes "+lootSerie2().length+" splitter nye!";
+    t.innerHTML = neste===SERIER
+      ? "🔒🌞 <b>Den siste skattkisten!</b><br>Samle alle "+lootSerie(neste-1).length+" skattene i denne samlingen, så åpnes "+lootSerie(neste).length+" helt nye!"
+      : "🔒✨ <b>Hemmelig samling!</b><br>Samle alle "+lootSerie(neste-1).length+" skattene, så åpnes "+lootSerie(neste).length+" splitter nye!";
     g.appendChild(t);
   }
   $("book-progress").textContent = owned+" / "+availableLoot().length;
@@ -1896,7 +2064,7 @@ function openShop(){
     b.innerHTML=item.e+"<small>"+cost+" 🪙</small>";
     b.disabled = SAVE.coins<cost;
     b.onclick=()=>{
-      const hadAll=serie2Open();
+      const serieFor=maxSerie();
       SAVE.coins-=cost;
       SAVE.collection[item.e]=1;
       (SAVE.newInBook=SAVE.newInBook||{})[item.e]=true; // ✨ skinner i boka til den er sett
@@ -1905,7 +2073,7 @@ function openShop(){
       persist();
       $("shop-ovl").classList.remove("on");
       showBook();
-      if(!hadAll && serie2Open()) announceSerie2();
+      checkSerieUnlock(serieFor);
     };
     g.appendChild(b);
   });
@@ -1968,12 +2136,16 @@ function openSettings(){
 }
 function testVoice(){
   ac() && AC.resume && AC.resume();
-  const seq=clearTTS(true);
+  clearTTS(true, true);
   const n=$("name-input").value.trim()||"Sofia";
-  speak("Hei "+n+"! Skal vi lese ord sammen?", {rate:0.9});
-  scheduleTTS(seq, ()=>speakWholeWord("IS", {rate:0.62}), 1700);
-  scheduleTTS(seq, ()=>speakWholeWord("SEL", {rate:0.62}), 2800);
-  scheduleTTS(seq, ()=>speakWholeWord("UGLE", {rate:0.62}), 3900);
+  // Kjede i stedet for faste tidspunkter: de gamle timerne startet neste
+  // eksempel før hilsenen var ferdig, så stemmen klippet seg selv.
+  const words=["IS","SEL","UGLE"];
+  const next=i=>{
+    if(i>=words.length) return;
+    speakThen(spokenWord(words[i]), {rate:0.62, interrupt:false}, ()=>next(i+1), {min:300, pad:250});
+  };
+  speakThen("Hei "+n+"! Skal vi lese ord sammen?", {rate:0.9}, ()=>next(0), {min:700, pad:300});
 }
 function saveSettings(){
   const n=$("name-input").value.trim();
@@ -2005,7 +2177,7 @@ function openStats(){
 }
 
 async function resetSave(){
-  clearTTS(true);
+  clearTTS(true, true);
   const ok = confirm("Vil du slette ALL fremgang i Ordreisen? Dette kan ikke angres.");
   if(!ok) return;
   const typed = prompt("Skriv SLETT for å bekrefte.");
@@ -2031,7 +2203,7 @@ $("stats-ovl").addEventListener("click", e=>{ if(e.target.id==="stats-ovl") e.ta
 $("slots").addEventListener("click", e=>{
   const s=e.target.closest(".slot");
   if(s && s.classList.contains("filled") && s.textContent){
-    clearTTS(true);
+    clearTTS(true, true);
     speakSound(s.textContent.trim());
     s.classList.add("say"); setTimeout(()=>s.classList.remove("say"), 450);
   }
@@ -2040,7 +2212,7 @@ $("slots").addEventListener("click", e=>{
 // ---------- iPAD / TOUCH ----------
 // Blokker pinch-zoom og pull-to-refresh (scrolling tillates kun i scrollområder)
 document.addEventListener("touchmove", e=>{
-  if(!e.target.closest("#book-scroll, #shop-grid, #stats-list, .ovl-box")) e.preventDefault();
+  if(!e.target.closest("#book-scroll, #shop-grid, #stats-list, .ovl-box, #tiles.choose")) e.preventDefault();
 }, {passive:false});
 document.addEventListener("gesturestart", e=>e.preventDefault());
 // Dobbelttrykk-zoom: touch-action:manipulation + viewport-innstillingene
