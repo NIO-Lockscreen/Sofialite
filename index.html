@@ -238,6 +238,12 @@
   /* ✨-teller på EMOJIBOKA-knappene når noe nytt venter */
   .nybadge{display:none; background:#fff; color:var(--drue); border-radius:999px; padding:2px 12px; font-size:17px; animation:pump 1.4s ease-in-out infinite;}
   #book-bottom{position:fixed; bottom:calc(14px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); display:flex; gap:10px;}
+  /* Med mange samlinger må boka merkes, ellers blir det ett langt rutenett */
+  .serie-head{grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; gap:8px;
+    font-weight:700; font-size:16px; padding:8px 14px; margin:8px 0 -2px; border-radius:14px;
+    background:rgba(255,255,255,.8); box-shadow:0 3px 0 var(--skygge);}
+  .serie-head .sh-tall{opacity:.65; font-size:14px;}
+  .serie-head.full{background:linear-gradient(90deg,#E8FFF6,#EDE7FF);}
   .serie2-teaser{grid-column:1/-1; text-align:center; font-weight:600; font-size:16px; line-height:1.5; color:var(--natt);
     background:linear-gradient(135deg,#EDE7FF,#FFE9F7); border:3px dashed var(--drue); border-radius:18px; padding:14px 16px;}
 
@@ -668,20 +674,62 @@ const LOOT = [
   ...["🦩","🐳","🦥","🦦","🎡","🎢","🎯","🏆","🪩","🛝"].map(e=>({e,r:"sjelden",s:2})),
   ...["🧞","🪄","🔮","🚁","🌠","🗿","🎆","🎨"].map(e=>({e,r:"episk",s:2})),
   ...["👸","🪽","🫧","💫","🌺","🎇"].map(e=>({e,r:"legendarisk",s:2})),
-  // 🌞 SERIE 3 – den siste skattkisten: åpnes når BÅDE serie 1 og 2 er
-  // fulle. Dobbelt så stor som de to første (20/20/16/12 = 68 nye), så den
-  // holder lenge for den som allerede har "alt". Samme forhold mellom
-  // sjeldenhetene, så trekkoddsene er uendret.
-  ...["🍫","🍬","🥐","🍯","🪀","🎏","🪴","🧶","🪺","🫐",
-      "🍑","🍊","🥞","🥧","🍮","🍧","🫖","🧺","🎣","🌵"].map(e=>({e,r:"vanlig",s:3})),
-  ...["🎺","🪗","🛼","🛷","🎳","🚠","🪃","🧩","🪆","🎤",
-      "🛵","🚤","🎿","🛹","⛸️","🏓","🥊","🪂","🧭","🔭"].map(e=>({e,r:"sjelden",s:3})),
-  ...["🧙","🧝","🦸","🎭","🌌","🛰️","🪸","🎊",
-      "🦚","🦢","🏰","🗻","🌉","🪐","🩰","💐"].map(e=>({e,r:"episk",s:3})),
-  ...["🌞","🌜","🧜‍♂️","🕊️","🧚‍♂️","🤴",
-      "🐉","🥇","🌅","👼","🌎","☄️"].map(e=>({e,r:"legendarisk",s:3})),
+  // 🗝️ SERIE 3 – skattkammeret: åpnes når serie 1 og 2 er fulle.
+  ...["🍫","🍬","🥐","🍯","🪀","🎏","🪴","🧶","🪺","🫐"].map(e=>({e,r:"vanlig",s:3})),
+  ...["🎺","🪗","🛼","🛷","🎳","🚠","🪃","🧩","🪆","🎤"].map(e=>({e,r:"sjelden",s:3})),
+  ...["🧙","🧝","🦸","🎭","🌌","🛰️","🪸","🎊"].map(e=>({e,r:"episk",s:3})),
+  ...["🌞","🌜","🧜‍♂️","🕊️","🧚‍♂️","🤴"].map(e=>({e,r:"legendarisk",s:3})),
+  // 🌅 SERIE 4 – soloppgangen
+  ...["🍑","🍊","🥞","🥧","🍮","🍧","🫖","🧺","🎣","🌵"].map(e=>({e,r:"vanlig",s:4})),
+  ...["🛵","🚤","🎿","🛹","⛸️","🏓","🥊","🪂","🧭","🔭"].map(e=>({e,r:"sjelden",s:4})),
+  ...["🦚","🦢","🏰","🗻","🌉","🪐","🩰","💐"].map(e=>({e,r:"episk",s:4})),
+  ...["🐉","🥇","🌅","👼","🌎","☄️"].map(e=>({e,r:"legendarisk",s:4})),
+  // 🐾 SERIE 5 – dyreriket
+  ...["🐕","🐈","🐄","🐖","🐏","🐓","🐇","🐁","🦃","🦨"].map(e=>({e,r:"vanlig",s:5})),
+  ...["🦝","🦡","🦫","🦘","🦙","🦌","🐗","🐠","🐡","🐚"].map(e=>({e,r:"sjelden",s:5})),
+  ...["🐊","🦑","🦞","🪼","🦏","🦛","🐪","🐃"].map(e=>({e,r:"episk",s:5})),
+  ...["🦣","🦤","🦬","🐅","🦧","🐿️"].map(e=>({e,r:"legendarisk",s:5})),
+  // 🍔 SERIE 6 – matfestivalen
+  ...["🍏","🍋","🍈","🥭","🥥","🥑","🥦","🥬","🧄","🧅"].map(e=>({e,r:"vanlig",s:6})),
+  ...["🍔","🍟","🥪","🌯","🥙","🍳","🥖","🥯","🍠","🧊"].map(e=>({e,r:"sjelden",s:6})),
+  ...["🍣","🍤","🍜","🍝","🥟","🍱","🧋","🥮"].map(e=>({e,r:"episk",s:6})),
+  ...["🎂","🍨","🍡","🥠","🍥","🫕"].map(e=>({e,r:"legendarisk",s:6})),
+  // 🚗 SERIE 7 – kjøretøy-parken
+  ...["🚕","🚙","🚐","🚚","🚛","🛻","🚎","🛴","🚦","⛽"].map(e=>({e,r:"vanlig",s:7})),
+  ...["🏎️","🏍️","🛺","🚒","🚑","🚓","🛶","🛥️","🚞","🚋"].map(e=>({e,r:"sjelden",s:7})),
+  ...["🚄","🚅","🚈","🚝","⛴️","🛩️","🛫","🛞"].map(e=>({e,r:"episk",s:7})),
+  ...["🚂","🛳️","🚡","⚓","🗺️","🏁"].map(e=>({e,r:"legendarisk",s:7})),
+  // ⚽ SERIE 8 – sport og lek
+  ...["🏀","🏈","⚾","🥎","🏐","🏉","🥏","🎱","🏸","🥅"].map(e=>({e,r:"vanlig",s:8})),
+  ...["🏒","🏑","🥍","🏏","⛳","🏹","🤿","🥋","🎽","🥌"].map(e=>({e,r:"sjelden",s:8})),
+  ...["🎮","🕹️","🎲","♟️","🃏","🀄","🎴","🏂"].map(e=>({e,r:"episk",s:8})),
+  ...["🥈","🥉","🏅","🎟️","🎫","🤹"].map(e=>({e,r:"legendarisk",s:8})),
+  // 🌦️ SERIE 9 – vær og verdensrom
+  ...["🌤️","⛅","🌥️","🌦️","🌨️","🌬️","💨","🌫️","☂️","☔"].map(e=>({e,r:"vanlig",s:9})),
+  ...["⛈️","🌩️","🌪️","☃️","🌡️","❄️","💧","🔥","⚡","🌊"].map(e=>({e,r:"sjelden",s:9})),
+  ...["🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘"].map(e=>({e,r:"episk",s:9})),
+  ...["🌍","🌏","🌚","🌝","🌛","⭐"].map(e=>({e,r:"legendarisk",s:9})),
+  // 🎩 SERIE 10 – klær og pynt
+  ...["👕","👔","👓","🕶️","🧢","🎓","👝","👛","👜","🩴"].map(e=>({e,r:"vanlig",s:10})),
+  ...["👘","🥻","👚","🩳","🦺","🥼","🥾","🥿","👞","🛍️"].map(e=>({e,r:"sjelden",s:10})),
+  ...["👠","👡","💄","📿","🎒","🧵","🪡","🧳"].map(e=>({e,r:"episk",s:10})),
+  ...["💍","🎩","👒","👗","🤵","👰"].map(e=>({e,r:"legendarisk",s:10})),
+  // 🏰 SERIE 11 – hus og steder
+  ...["🏡","🏘️","🏢","🏬","🏨","🏪","🏥","🏦","🚪","🪟"].map(e=>({e,r:"vanlig",s:11})),
+  ...["🏛️","🏟️","🏗️","🏭","⛲","⛱️","🏜️","🏕️","🛗","♨️"].map(e=>({e,r:"sjelden",s:11})),
+  ...["🗽","🗼","🏯","🌁","🌃","🌆","🏞️","🛤️"].map(e=>({e,r:"episk",s:11})),
+  ...["🏝️","🌋","⛰️","🏖️","🌄","🌇"].map(e=>({e,r:"legendarisk",s:11})),
+  // 😊 SERIE 12 – fjes og fantasi (siste)
+  ...["😀","😃","😄","😁","😆","😊","🙂","😉","😌","😎"].map(e=>({e,r:"vanlig",s:12})),
+  ...["🥰","😍","🤩","😘","😜","🤪","🤗","🤠","🥳","🤓"].map(e=>({e,r:"sjelden",s:12})),
+  ...["😺","😸","😻","🙀","🐵","🙈","🙉","🙊"].map(e=>({e,r:"episk",s:12})),
+  ...["👻","🎃","👽","🤖","😇","🥸"].map(e=>({e,r:"legendarisk",s:12})),
 ];
-const SERIER = 3;
+// Antall serier leses ut av LOOT: en ny serie er da bare fire nye lister
+// med s:N – ingen annen kode må røres. Hver serie har samme form
+// (10 vanlig / 10 sjelden / 8 episk / 6 legendarisk = 34), så trekkoddsene
+// i kistene er de samme uansett hvor mange serier som er åpne.
+const SERIER = Math.max(...LOOT.map(x=>x.s||1));
 function serieOf(x){ return x.s || 1; }
 function lootSerie(n){ return LOOT.filter(x=>serieOf(x)===n); }
 function serieComplete(n){ return lootSerie(n).every(x=>SAVE.collection[x.e]); }
@@ -693,14 +741,29 @@ function maxSerie(){
 }
 function serie2Open(){ return maxSerie()>=2; }
 function availableLoot(){ const m=maxSerie(); return LOOT.filter(x=>serieOf(x)<=m); }
-const SERIE_NAVN = {2:"HEMMELIG SAMLING", 3:"SISTE SKATTKISTE"};
+// Navn/ikon per serie – brukes både i åpnings-fanfaren og i teaseren i
+// boka. Mangler en serie her, får den en nøytral tekst.
+const SERIE_INFO = {
+  1:{ikon:"⭐",  navn:"Første samling",   si:""},
+  2:{ikon:"✨",  navn:"Hemmelig samling", si:"En hemmelig ny samling er åpnet!"},
+  3:{ikon:"🗝️", navn:"Skattkammeret",    si:"Skattkammeret er åpnet!"},
+  4:{ikon:"🌅", navn:"Soloppgangen",      si:"Soloppgang-samlingen er åpnet!"},
+  5:{ikon:"🐾", navn:"Dyreriket",         si:"Hele dyreriket er åpnet!"},
+  6:{ikon:"🍔", navn:"Matfestivalen",     si:"Matfestivalen er åpnet!"},
+  7:{ikon:"🚗", navn:"Kjøretøy-parken",   si:"Kjøretøy-parken er åpnet!"},
+  8:{ikon:"⚽", navn:"Sport og lek",      si:"Sport og lek er åpnet!"},
+  9:{ikon:"🌦️", navn:"Vær og verdensrom", si:"Vær og verdensrom er åpnet!"},
+  10:{ikon:"🎩", navn:"Klær og pynt",     si:"Klær og pynt er åpnet!"},
+  11:{ikon:"🏰", navn:"Hus og steder",    si:"Hus og steder er åpnet!"},
+  12:{ikon:"😊", navn:"Fjes og fantasi",  si:"Den aller siste samlingen er åpnet!"},
+};
+function serieInfo(n){ return SERIE_INFO[n] || {ikon:"✨", navn:"Ny samling", si:"En ny samling er åpnet!"}; }
 function announceSerie(n){
+  const info=serieInfo(n);
   confetti(80,true); sfx.fanfare();
-  toast("🔓✨ "+(SERIE_NAVN[n]||"NY SAMLING")+" ÅPNET! "+lootSerie(n).length+" nye skatter venter!");
-  const linje = n>=SERIER
-    ? "Utrolig, "+SAVE.name+"! Du har samlet alt! Den aller siste skattkisten er åpnet!"
-    : "Fantastisk, "+SAVE.name+"! Du har samlet alt sammen! En hemmelig ny samling er åpnet!";
-  speak(linje, {rate:0.95, interrupt:false, protect:true});
+  toast("🔓"+info.ikon+" "+info.navn.toUpperCase()+" ÅPNET! "+lootSerie(n).length+" nye skatter venter!");
+  speak((n>=SERIER ? "Utrolig, " : "Fantastisk, ")+SAVE.name+"! Du har samlet alt sammen! "+info.si,
+    {rate:0.95, interrupt:false, protect:true});
 }
 // Kall før/etter at en emoji legges til: låste den opp neste serie?
 function checkSerieUnlock(before){
@@ -728,9 +791,27 @@ const SETS = [
   {navn:"Leke-loftet 🪀", emojis:["🪀","🎏","🧶","🪆","🧩","🎳"], premie:20, s:3},
   {navn:"Sirkus-scenen 🎭", emojis:["🎺","🪗","🎤","🎭","🎊","🦸"], premie:25, s:3},
   {navn:"Eventyrfolket 🧙", emojis:["🧙","🧝","🧚‍♂️","🧜‍♂️","🤴","🕊️"], premie:35, s:3},
-  {navn:"Kiosk-kroken 🍧", emojis:["🍑","🍊","🥞","🥧","🍮","🍧"], premie:20, s:3},
-  {navn:"Fart og moro 🛹", emojis:["🛵","🚤","🎿","🛹","⛸️","🏓"], premie:25, s:3},
-  {navn:"Vidunderlig verden 🌎", emojis:["🌎","🌅","☄️","🪐","🌉","🗻"], premie:35, s:3},
+  // Serie 4-sett
+  {navn:"Kiosk-kroken 🍧", emojis:["🍑","🍊","🥞","🥧","🍮","🍧"], premie:20, s:4},
+  {navn:"Fart og moro 🛹", emojis:["🛵","🚤","🎿","🛹","⛸️","🏓"], premie:30, s:4},
+  {navn:"Vidunderlig verden 🌎", emojis:["🌎","🌅","☄️","🪐","🌉","🗻"], premie:40, s:4},
+  // Serie 5–12: to sett per samling
+  {navn:"Gårdsdyra 🐄", emojis:["🐕","🐈","🐄","🐖","🐏","🐓"], premie:20, s:5},
+  {navn:"Urtidsgjengen 🦣", emojis:["🦣","🦤","🦬","🐅","🦧","🐿️"], premie:40, s:5},
+  {navn:"Frukt og grønt 🥭", emojis:["🍏","🍋","🍈","🥭","🥥","🥑"], premie:20, s:6},
+  {navn:"Dessertbordet 🎂", emojis:["🎂","🍨","🍡","🥠","🍥","🫕"], premie:40, s:6},
+  {navn:"Utrykning 🚒", emojis:["🚒","🚑","🚓","🏎️","🏍️","🛺"], premie:25, s:7},
+  {navn:"Lange reiser 🛳️", emojis:["🚂","🛳️","🚡","⚓","🗺️","🏁"], premie:40, s:7},
+  {navn:"Ballspill 🏀", emojis:["🏀","🏈","⚾","🥎","🏐","🏉"], premie:20, s:8},
+  {navn:"Pallplass 🥈", emojis:["🥈","🥉","🏅","🎟️","🎫","🤹"], premie:40, s:8},
+  {navn:"Uvær ⛈️", emojis:["⛈️","🌩️","🌪️","☃️","❄️","⚡"], premie:25, s:9},
+  {navn:"Månefaser 🌕", emojis:["🌑","🌒","🌓","🌔","🌕","🌖"], premie:35, s:9},
+  {navn:"Fotformat 👞", emojis:["🩴","🥾","🥿","👞","👠","👡"], premie:20, s:10},
+  {navn:"Festantrekk 👰", emojis:["💍","🎩","👒","👗","🤵","👰"], premie:40, s:10},
+  {navn:"Nabolaget 🏡", emojis:["🏡","🏘️","🏢","🏬","🏨","🏪"], premie:20, s:11},
+  {navn:"Verdens under 🗽", emojis:["🗽","🗼","🏯","🌁","🌃","🌆"], premie:40, s:11},
+  {navn:"Smilefjes 😀", emojis:["😀","😃","😄","😁","😆","😊"], premie:20, s:12},
+  {navn:"Spøkelsesfesten 👻", emojis:["👻","🎃","👽","🤖","😇","🥸"], premie:45, s:12},
 ];
 
 // ---------- BOSSER (flere låses opp med nivå!) ----------
@@ -2012,9 +2093,21 @@ function showBook(){
   const order=["legendarisk","episk","sjelden","vanlig"];
   // Serie først, så sjeldenhet: med tre samlinger blir boka rotete hvis
   // seriene blandes om hverandre.
+  let visSerie=0;
   [...availableLoot()]
     .sort((a,b)=> (serieOf(a)-serieOf(b)) || (order.indexOf(a.r)-order.indexOf(b.r)))
     .forEach(item=>{
+    // Overskrift for hver samling: 408 ruter på rad er umulig å orientere seg i
+    if(serieOf(item)!==visSerie){
+      visSerie=serieOf(item);
+      const info=serieInfo(visSerie), alle=lootSerie(visSerie);
+      const eide=alle.filter(x=>SAVE.collection[x.e]).length;
+      const h=document.createElement("div");
+      h.className="serie-head"+(eide===alle.length ? " full" : "");
+      h.innerHTML="<span>"+info.ikon+" "+info.navn+(eide===alle.length?" 🏅":"")+
+        "</span><span class='sh-tall'>"+eide+"/"+alle.length+"</span>";
+      g.appendChild(h);
+    }
     const c=document.createElement("div");
     const n=SAVE.collection[item.e]||0;
     const isNew = n && SAVE.newInBook && SAVE.newInBook[item.e];
@@ -2039,14 +2132,15 @@ function showBook(){
     }; }
     g.appendChild(c);
   });
-  // 🔒 Teaser for neste låste samling (serie 2, så serie 3)
+  // 🔒 Teaser for neste låste samling
   const neste=maxSerie()+1;
   if(neste<=SERIER){
+    const info=serieInfo(neste);
     const t=document.createElement("div");
     t.className="serie2-teaser";
-    t.innerHTML = neste===SERIER
-      ? "🔒🌞 <b>Den siste skattkisten!</b><br>Samle alle "+lootSerie(neste-1).length+" skattene i denne samlingen, så åpnes "+lootSerie(neste).length+" helt nye!"
-      : "🔒✨ <b>Hemmelig samling!</b><br>Samle alle "+lootSerie(neste-1).length+" skattene, så åpnes "+lootSerie(neste).length+" splitter nye!";
+    t.innerHTML="🔒"+info.ikon+" <b>"+info.navn+"!</b><br>Samle alle "+lootSerie(neste-1).length+
+      " skattene i denne samlingen, så åpnes "+lootSerie(neste).length+" splitter nye!"+
+      (neste<SERIER ? " (og enda flere etter det …)" : "");
     g.appendChild(t);
   }
   $("book-progress").textContent = owned+" / "+availableLoot().length;
