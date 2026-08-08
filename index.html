@@ -574,7 +574,7 @@
 
 <!-- BOK -->
 <div class="screen" id="scr-book">
-  <div class="pill" style="font-size:22px">📖 Emojiboka <small id="book-progress"></small> &nbsp;🪙<span id="coin-count">0</span></div>
+  <div class="pill" style="font-size:22px">📖 Emojiboka <small id="book-progress"></small> &nbsp;🪙<span id="book-coins">0</span></div>
   <div id="book-scroll">
     <div id="sets-wrap"></div>
     <div id="book-grid"></div>
@@ -2057,7 +2057,7 @@ function finishEndScreen(){
 // ---------- EMOJIBOK + SETT ----------
 function showBook(){
   show("scr-book");
-  $("coin-count").textContent=SAVE.coins;
+  $("book-coins").textContent=SAVE.coins;
   // Samle-sett
   const sw=$("sets-wrap"); sw.innerHTML="";
   SETS.forEach((set,si)=>{
@@ -2123,7 +2123,8 @@ function showBook(){
         c.classList.remove("shiny");
         const nb=c.querySelector(".ny-badge"); if(nb) nb.remove();
         SAVE.coins+=1;
-        sfx.coin(); flyStar(c,"🪙");
+        sfx.coin(); flyStar(c,"🪙",$("book-coins"));
+        $("book-coins").textContent=SAVE.coins; // boka re-rendres ikke her – oppdater saldoen direkte
         persist(); updateNyBadges();
         toast(item.e+" "+RAR_NAME[item.r]+" · 🤫 Hemmelig mynt! +1 🪙");
         return;
