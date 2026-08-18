@@ -2251,8 +2251,25 @@ function testVoice(){
   };
   speakThen("Hei "+n+"! Skal vi lese ord sammen?", {rate:0.9}, ()=>next(0), {min:700, pad:300});
 }
+// 💰 Foreldre-snarvei: skriv «Cash 500» i navnefeltet og trykk lagre, så
+// legges 500 mynter til. Navnet røres ikke – feltet fylles med det gamle
+// navnet igjen med én gang, så hun aldri heter «Cash 500» i spillet.
+// Brukes til å kjøpe tilbake samlingen hvis en save går tapt.
+function cashCheat(raw){
+  const m = raw.match(/^cash\s*(\d+)$/i);
+  if(!m) return false;
+  const sum = Math.min(999999, parseInt(m[1],10));
+  SAVE.coins += sum;
+  persist();
+  $("name-input").value = SAVE.name;   // navnet tilbake som det var
+  renderStartStats();
+  toast("🪙 +"+sum+" mynter! Du har "+SAVE.coins+".");
+  sfx.coin();
+  return true;
+}
 function saveSettings(){
   const n=$("name-input").value.trim();
+  if(cashCheat(n)) return;
   if(n) SAVE.name=n.charAt(0).toUpperCase()+n.slice(1);
   persist();
   $("settings-ovl").classList.remove("on");
