@@ -842,6 +842,10 @@ function freshSave(){
     newInBook:{}}; // ✨ nylig opplåste/kjøpte emojier som skinner i boka til de er sett
 }
 let SAVE = freshSave();
+// 🆓 Gratis-modus (foreldre-snarvei «freefix» i navnefeltet). Bevisst IKKE
+// en del av SAVE: den lagres aldri, og nullstilles når en reise starter,
+// så den kan ikke bli stående på ved et uhell.
+let FREEFIX=false;
 async function loadSave(){
   try{
     let raw = localStorage.getItem("ordreisen-save");
@@ -1297,6 +1301,7 @@ const PATHS = [
 
 function startRun(){
   ac() && AC.resume && AC.resume();
+  FREEFIX=false; // reisen starter – gratis-modus må skrives inn på nytt
   run = { room:0, streak:0, stars:0, solved:0, tries:0, mistakes:0, hearts:MAX_HEARTS, failed:false, usedWords:new Set(),
           bonusGiven:false, boss:null, bossHP:0, inBoss:false, levelUps:0, coinsWon:0, xpWon:0,
           charm:null, brave:0, braveLoot:false, banked:false, coinsBanked:0, comeback:false };
@@ -2160,12 +2165,13 @@ function updateNyBadges(){
 function openShop(){
   $("shop-coins").textContent=SAVE.coins;
   const g=$("shop-grid"); g.innerHTML="";
+  if(FREEFIX) g.innerHTML+="<div style='grid-column:1/-1;font-weight:700'>🆓 Gratis-modus på – velg så mye du vil!</div>";
   const locked=availableLoot().filter(x=>!SAVE.collection[x.e]);
-  if(!locked.length){ g.innerHTML="<div style='grid-column:1/-1;font-weight:700'>Du har ALT! 🤩</div>"; }
+  if(!locked.length){ g.innerHTML+="<div style='grid-column:1/-1;font-weight:700'>Du har ALT! 🤩</div>"; }
   locked.forEach(item=>{
-    const cost=SHOP_COST[item.r];
+    const cost=FREEFIX ? 0 : SHOP_COST[item.r];
     const b=document.createElement("button"); b.className="shop-cell";
-    b.innerHTML=item.e+"<small>"+cost+" 🪙</small>";
+    b.innerHTML=item.e+"<small>"+(FREEFIX ? "gratis" : cost+" 🪙")+"</small>";
     b.disabled = SAVE.coins<cost;
     b.onclick=()=>{
       const serieFor=maxSerie();
@@ -2175,6 +2181,7 @@ function openShop(){
       sfx.fanfare(); confetti(40, item.r==="episk"||item.r==="legendarisk");
       toast("Du valgte "+item.e+"! "+RAR_NAME[item.r]);
       persist();
+      if(FREEFIX){ openShop(); checkSerieUnlock(serieFor); return; } // bli i butikken og plukk videre
       $("shop-ovl").classList.remove("on");
       showBook();
       checkSerieUnlock(serieFor);
@@ -2255,6 +2262,17 @@ function testVoice(){
 // legges 500 mynter til. Navnet røres ikke – feltet fylles med det gamle
 // navnet igjen med én gang, så hun aldri heter «Cash 500» i spillet.
 // Brukes til å kjøpe tilbake samlingen hvis en save går tapt.
+// 🆓 Foreldre-snarvei: skriv «freefix» i navnefeltet og trykk lagre, så er
+// alt i butikken gratis. Navnet røres ikke. Gratis-modus varer til en reise
+// startes – da må «freefix» skrives inn på nytt.
+function freefixCheat(raw){
+  if(!/^freefix$/i.test(raw)) return false;
+  FREEFIX=true;
+  $("name-input").value = SAVE.name;   // navnet tilbake som det var
+  toast("🆓 Gratis-modus på – kjøp i butikken til neste reise starter.");
+  sfx.star();
+  return true;
+}
 function cashCheat(raw){
   const m = raw.match(/^cash\s*(\d+)$/i);
   if(!m) return false;
@@ -2269,7 +2287,7 @@ function cashCheat(raw){
 }
 function saveSettings(){
   const n=$("name-input").value.trim();
-  if(cashCheat(n)) return;
+  if(cashCheat(n) || freefixCheat(n)) return;
   if(n) SAVE.name=n.charAt(0).toUpperCase()+n.slice(1);
   persist();
   $("settings-ovl").classList.remove("on");
